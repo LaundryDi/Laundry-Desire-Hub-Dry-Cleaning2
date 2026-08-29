@@ -25,6 +25,270 @@ function showResult(message, error = false) {
     box.style.color = "#17651d";
     box.style.borderColor = "#d6ecd9";
   }
+}function adminLogin() {
+
+  const user = document.getElementById("adminUser").value.trim();
+  const pass = document.getElementById("adminPass").value;
+
+  if (user === "Laundry" && pass === "4321") {
+
+    document.getElementById("adminLogin")
+      .classList.add("hidden");
+
+    document.getElementById("adminContent")
+      .classList.remove("hidden");
+
+    document.getElementById("loginError").textContent = "";
+
+    loadAdminOrders();
+
+  } else {
+
+    document.getElementById("loginError").textContent =
+      "Username ya password galat hai.";
+
+  }
+}
+
+
+async function loadAdminOrders() {
+
+  let orders = [];
+
+  try {
+
+    const response = await fetch(API + "/orders");
+
+    if (!response.ok) throw new Error();
+
+    const data = await response.json();
+    orders = data.orders || [];
+
+  } catch {
+
+    orders = [...localOrders];
+
+  }
+
+  const filter =
+    document.getElementById("adminFilter")?.value || "All";
+
+  if (filter !== "All") {
+    orders = orders.filter(
+      order => order.status === filter
+    );
+  }
+
+  const allOrders = orders.length;
+
+  document.getElementById("totalOrders").textContent =
+    allOrders;
+
+  document.getElementById("receivedOrders").textContent =
+    orders.filter(o => o.status === "Received").length;
+
+  document.getElementById("cleaningOrders").textContent =
+    orders.filter(o => o.status === "Cleaning").length;
+
+  document.getElementById("readyOrders").textContent =
+    orders.filter(o => o.status === "Ready").length;
+
+  const list = document.getElementById("ordersList");
+
+  if (!orders.length) {
+
+    list.innerHTML = `
+      <div class="result">
+        No orders found.
+      </div>
+    `;
+
+    return;
+  }
+
+  list.innerHTML = orders
+    .slice()
+    .reverse()
+    .map(order => {
+
+      const phone =
+        order.phone || order.mobile || "";
+
+      const name =
+        order.name || order.customer_name || "Customer";
+
+      const address =
+        order.address || "Address not available";
+
+      const service =
+        order.service || "Service";
+
+      const quantity =
+        order.quantity ?? order.kg ?? 0;
+
+      const total =
+        order.total ?? 0;
+
+      const created =
+        order.createdAt ||
+        order.created_at ||
+        "";
+
+      return `
+        <div class="order-admin">
+
+          <h3>Order #${order.id}</h3>
+
+          <p>
+            <b>Customer:</b> ${name}
+          </p>
+
+          <p>
+            <b>Mobile:</b> ${phone}
+          </p>
+
+          <p>
+            <b>Service:</b> ${service}
+          </p>
+
+          <p>
+            <b>Quantity:</b> ${quantity}
+          </p>
+
+          <p>
+            <b>Address:</b> ${address}
+          </p>
+
+          <p class="order-total">
+            Total: ₹${total}
+          </p>
+
+          ${
+            created
+              ? `<p><b>Order Time:</b> ${new Date(created).toLocaleString()}</p>`
+              : ""
+          }
+
+          <span class="status-badge">
+            ${order.status || "Received"}
+          </span>
+
+          <select
+            onchange="changeStatus('${order.id}', this.value)"
+          >
+            ${
+              [
+                "Received",
+                "Picked Up",
+                "Cleaning",
+                "Ready",
+                "Delivered",
+                "Not Ready"
+              ]
+              .map(status => `
+                <option
+                  value="${status}"
+                  ${order.status === status ? "selected" : ""}
+                >
+                  ${status}
+                </option>
+              `)
+              .join("")
+            }
+          </select>
+
+          <div class="order-actions">
+
+            <button
+              class="call-btn"
+              onclick="callCustomer('${phone}')"
+            >
+              📞 Call
+            </button>
+
+            <button
+              class="whatsapp-btn"
+              onclick="whatsappCustomer('${phone}', '${order.id}')"
+            >
+              WhatsApp
+            </button>
+
+          </div>
+
+        </div>
+      `;
+
+    })
+    .join("");
+}
+
+
+async function changeStatus(id, status) {
+
+  try {
+
+    const response = await fetch(
+      API + "/orders/" + encodeURIComponent(id),
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ status })
+      }
+    );
+
+    if (!response.ok) throw new Error();
+
+  } catch {
+
+    const order = localOrders.find(
+      o => o.id === id
+    );
+
+    if (order) {
+
+      order.status = status;
+
+      localStorage.setItem(
+        "laundryOrders",
+        JSON.stringify(localOrders)
+      );
+    }
+  }
+
+  loadAdminOrders();
+}
+
+
+function callCustomer(phone) {
+
+  if (!phone) {
+    alert("Mobile number available nahi hai.");
+    return;
+  }
+
+  window.location.href = "tel:" + phone;
+}
+
+
+function whatsappCustomer(phone, orderId) {
+
+  if (!phone) {
+    alert("Mobile number available nahi hai.");
+    return;
+  }
+
+  const message =
+    `Hello, Laundry Desire Hub se aapke Order ${orderId} ka update hai.`;
+
+  window.open(
+    "https://wa.me/91" +
+    phone +
+    "?text=" +
+    encodeURIComponent(message),
+    "_blank"
+  );
 }
 
 
