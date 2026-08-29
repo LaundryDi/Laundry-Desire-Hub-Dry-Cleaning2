@@ -2,27 +2,31 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // Website files
+    // Website
     if (!url.pathname.startsWith("/api/")) {
       return env.ASSETS.fetch(request);
     }
 
-    // API: Health check
-    if (url.pathname === "/api/health" && request.method === "GET") {
+    // Health check
+    if (url.pathname === "/api/health") {
       return json({
         success: true,
         message: "Laundry Desire Hub API is working"
       });
     }
 
-    // API: Create order
-    if (url.pathname === "/api/orders" && request.method === "POST") {
+    // =========================
+    // PLACE ORDER
+    // =========================
+    if (
+      url.pathname === "/api/orders" &&
+      request.method === "POST"
+    ) {
       try {
         const body = await request.json();
 
         const id =
-          "LDH" +
-          Date.now().toString().slice(-8);
+          "LDH" + Date.now().toString().slice(-8);
 
         const customerName = body.customerName || "";
         const mobile = body.mobile || "";
@@ -34,7 +38,9 @@ export default {
 
         if (service === "Wash & Fold") {
           amount = kg < 4 ? 269 : kg * 69;
-        } else if (service === "Wash & Iron") {
+        }
+
+        if (service === "Wash & Iron") {
           amount = kg < 4 ? 369 : kg * 95;
         }
 
@@ -94,7 +100,9 @@ export default {
       }
     }
 
-    // API: Customer orders
+    // =========================
+    // CUSTOMER TRACKING
+    // =========================
     if (
       url.pathname === "/api/customer/orders" &&
       request.method === "POST"
@@ -132,7 +140,9 @@ export default {
       }
     }
 
-    // API: Admin login
+    // =========================
+    // ADMIN LOGIN
+    // =========================
     if (
       url.pathname === "/api/admin/login" &&
       request.method === "POST"
@@ -154,14 +164,16 @@ export default {
           error: "Username ya password galat hai."
         }, 401);
 
-      } catch (error) {
+      } catch {
         return json({
           error: "Invalid request"
         }, 400);
       }
     }
 
-    // API: Admin orders
+    // =========================
+    // ADMIN ORDERS
+    // =========================
     if (
       url.pathname === "/api/admin/orders" &&
       request.method === "GET"
@@ -193,7 +205,9 @@ export default {
       }
     }
 
-    // API: Change order status
+    // =========================
+    // CHANGE STATUS
+    // =========================
     if (
       url.pathname.startsWith("/api/admin/orders/") &&
       request.method === "PATCH"
@@ -205,7 +219,7 @@ export default {
 
         const body = await request.json();
 
-        const allowedStatuses = [
+        const statuses = [
           "Received",
           "Picked Up",
           "Cleaning",
@@ -214,7 +228,7 @@ export default {
           "Not Ready"
         ];
 
-        if (!allowedStatuses.includes(body.status)) {
+        if (!statuses.includes(body.status)) {
           return json({
             error: "Invalid status"
           }, 400);
@@ -258,4 +272,4 @@ function json(data, status = 200) {
       }
     }
   );
-    }
+      }
