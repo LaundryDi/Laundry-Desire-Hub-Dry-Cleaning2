@@ -1,5 +1,5 @@
 name = "laundry-desire-hub-dry-cleaning2"
-main = "public/app.js"
+main = "app.js"
 compatibility_date = "2026-08-29"
 
 [assets]
