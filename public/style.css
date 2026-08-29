@@ -626,3 +626,91 @@ footer span {
     min-width: 68px;
   }
 }
+.admin-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.admin-toolbar select {
+  flex: 1;
+  margin: 0;
+}
+
+.admin-toolbar button {
+  border: 0;
+  background: var(--light-blue);
+  color: var(--blue);
+  border-radius: 12px;
+  padding: 10px 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.order-admin {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 15px;
+  margin-bottom: 12px;
+  background: white;
+}
+
+.order-admin h3 {
+  color: var(--blue);
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.order-admin p {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 5px 0;
+}
+
+.order-admin .order-total {
+  font-size: 16px;
+  color: var(--text);
+  font-weight: 800;
+}
+
+.order-admin select {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.order-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.order-actions button {
+  border: 0;
+  padding: 11px;
+  border-radius: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.call-btn {
+  background: #eef5ff;
+  color: var(--blue);
+}
+
+.whatsapp-btn {
+  background: #eef8f0;
+  color: #17651d;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 5px 9px;
+  border-radius: 20px;
+  background: #eef5ff;
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 800;
+  margin-top: 5px;
+    }
