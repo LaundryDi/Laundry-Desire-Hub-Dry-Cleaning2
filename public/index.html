@@ -12,427 +12,552 @@
 
 <body>
 
-  <!-- TOP BAR -->
-  <header class="topbar">
-    <div class="brand">
-      <div class="brand-mark">LD</div>
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">LD</div>
 
-      <div>
-        <h1>Laundry Desire Hub</h1>
-        <span>DRY CLEANING</span>
-      </div>
+    <div>
+      <h1>Laundry Desire Hub</h1>
+      <span>DRY CLEANING</span>
+    </div>
+  </div>
+
+  <button class="admin-btn" onclick="showAdmin()">
+    Admin
+  </button>
+</header>
+
+
+<main>
+
+<!-- HERO -->
+<section class="hero">
+
+  <div class="hero-content">
+
+    <div class="premium-badge">
+      ✦ PREMIUM LAUNDRY SERVICE
     </div>
 
-    <button class="admin-btn" onclick="showAdmin()">
-      Admin
-    </button>
-  </header>
-
-
-  <main>
-
-    <!-- HERO -->
-    <section class="hero">
-
-      <div class="hero-content">
-
-        <div class="premium-badge">
-          ✦ PREMIUM LAUNDRY SERVICE
-        </div>
-
-        <h2>
-          Fresh Clothes.<br>
-          <span>Happy You.</span>
-        </h2>
-
-        <p>
-          Professional washing, ironing & dry cleaning
-          delivered right to your doorstep.
-        </p>
-
-        <button
-          class="hero-btn"
-          onclick="document.getElementById('orderBox').scrollIntoView({behavior:'smooth'})"
-        >
-          Book Pickup <span>→</span>
-        </button>
-
-      </div>
-
-
-      <!-- DELIVERY CARD -->
-      <div class="delivery-card">
-
-        <div class="delivery-icon">
-          🚚
-        </div>
-
-        <div class="delivery-info">
-          <strong>Pickup & Delivery</strong>
-          <span>2–3 days service</span>
-        </div>
-
-        <div class="delivery-price">
-          <strong>FREE</strong>
-          <span>₹300+ orders</span>
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- SERVICES -->
-    <section class="section">
-
-      <div class="section-title">
-        <div>
-          <span class="mini-label">WHAT WE OFFER</span>
-          <h2>Our Services</h2>
-        </div>
-      </div>
-
-
-      <div class="services">
-
-        <div
-          class="service-card featured"
-          onclick="selectService('Wash & Fold')"
-        >
-
-          <div class="service-top">
-            <div class="service-icon">👕</div>
-            <span class="arrow">↗</span>
-          </div>
-
-          <h3>Wash & Fold</h3>
-
-          <p>
-            Freshly washed and neatly folded clothes.
-          </p>
-
-          <div class="service-price">
-            <strong>₹269</strong>
-            <span>minimum 4 KG</span>
-          </div>
-
-          <small>₹69 / KG after minimum</small>
-
-        </div>
-
-
-        <div
-          class="service-card"
-          onclick="selectService('Wash & Iron')"
-        >
-
-          <div class="service-top">
-            <div class="service-icon">👔</div>
-            <span class="arrow">↗</span>
-          </div>
-
-          <h3>Wash & Iron</h3>
-
-          <p>
-            Washed, pressed and ready to wear.
-          </p>
-
-          <div class="service-price">
-            <strong>₹369</strong>
-            <span>minimum 4 KG</span>
-          </div>
-
-          <small>₹95 / KG after minimum</small>
-
-        </div>
-
-
-        <div
-          class="service-card"
-          onclick="selectService('Dry Cleaning')"
-        >
-
-          <div class="service-top">
-            <div class="service-icon">✨</div>
-            <span class="arrow">↗</span>
-          </div>
-
-          <h3>Dry Cleaning</h3>
-
-          <p>
-            Premium care for your special clothes.
-          </p>
-
-          <div class="service-price">
-            <strong>Custom</strong>
-            <span>price</span>
-          </div>
-
-          <small>Contact us for pricing</small>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- ORDER -->
-    <section class="order-section" id="orderBox">
-
-      <div class="order-heading">
-        <span class="mini-label">QUICK & EASY</span>
-        <h2>Place Your Order</h2>
-        <p>
-          Enter your details and we'll arrange your pickup.
-        </p>
-      </div>
-
-
-      <div class="order-box">
-
-        <form id="orderForm">
-
-          <div class="input-group">
-            <label>Your Name</label>
-            <input
-              id="name"
-              type="text"
-              placeholder="Enter your name"
-              required
-            >
-          </div>
-
-
-          <div class="input-group">
-            <label>Mobile Number</label>
-
-            <input
-              id="phone"
-              type="tel"
-              inputmode="numeric"
-              maxlength="10"
-              placeholder="10 digit mobile number"
-              required
-            >
-          </div>
-
-
-          <div class="input-group">
-            <label>Service</label>
-
-            <select id="service" required>
-              <option value="">Select service</option>
-              <option value="Wash & Fold">Wash & Fold</option>
-              <option value="Wash & Iron">Wash & Iron</option>
-              <option value="Dry Cleaning">Dry Cleaning</option>
-            </select>
-          </div>
-
-
-          <div class="input-group">
-            <label>Quantity / Weight</label>
-
-            <input
-              id="quantity"
-              type="number"
-              min="1"
-              step="0.1"
-              placeholder="Enter KG / pieces"
-              required
-            >
-          </div>
-
-
-          <div class="input-group">
-            <label>Pickup Address</label>
-
-            <textarea
-              id="address"
-              rows="3"
-              placeholder="Enter complete pickup address"
-              required
-            ></textarea>
-          </div>
-
-
-          <button
-            class="place-order-btn"
-            type="submit"
-          >
-            Place Order
-            <span>→</span>
-          </button>
-
-        </form>
-
-
-        <div
-          id="orderResult"
-          class="result hidden"
-        ></div>
-
-      </div>
-
-    </section>
-
-
-    <!-- TRACK ORDER -->
-    <section class="tracking-section">
-
-      <div class="tracking-card">
-
-        <div class="tracking-icon">
-          📦
-        </div>
-
-        <div class="tracking-content">
-
-          <span class="mini-label">
-            ORDER STATUS
-          </span>
-
-          <h2>Track Your Order</h2>
-
-          <p>
-            Enter your mobile number to see your latest orders.
-          </p>
-
-
-          <div class="track-row">
-
-            <input
-              id="trackPhone"
-              type="tel"
-              inputmode="numeric"
-              maxlength="10"
-              placeholder="Enter mobile number"
-            >
-
-            <button onclick="trackOrder()">
-              Track
-            </button>
-
-          </div>
-
-
-          <div id="trackingResult"></div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- ADMIN -->
-    <section
-      id="adminPanel"
-      class="admin-panel hidden"
-    >
-
-      <div class="admin-header">
-
-        <div>
-          <span class="mini-label">STAFF ONLY</span>
-          <h2>Admin Panel</h2>
-          <p>Laundry Desire Hub</p>
-        </div>
-
-        <button onclick="hideAdmin()">
-          ✕
-        </button>
-
-      </div>
-
-
-      <!-- LOGIN -->
-      <div id="adminLogin">
-
-        <div class="input-group">
-          <label>Username</label>
-
-          <input
-            id="adminUser"
-            type="text"
-            placeholder="Admin username"
-          >
-        </div>
-
-
-        <div class="input-group">
-          <label>Password</label>
-
-          <input
-            id="adminPass"
-            type="password"
-            placeholder="Admin password"
-          >
-        </div>
-
-
-        <button
-          class="place-order-btn"
-          onclick="adminLogin()"
-        >
-          Login
-          <span>→</span>
-        </button>
-
-        <p id="loginError" class="error-text"></p>
-
-      </div>
-
-
-      <!-- ADMIN CONTENT -->
-      <div
-        id="adminContent"
-        class="hidden"
-      >
-
-        <div class="admin-stats">
-
-          <div class="stat-card">
-            <strong id="totalOrders">0</strong>
-            <span>Total Orders</span>
-          </div>
-
-          <div class="stat-card">
-            <strong id="readyOrders">0</strong>
-            <span>Ready</span>
-          </div>
-
-        </div>
-
-
-        <div id="ordersList"></div>
-
-      </div>
-
-    </section>
-
-  </main>
-
-
-  <!-- FOOTER -->
-  <footer>
-
-    <div class="footer-logo">
-      Laundry Desire Hub
-    </div>
+    <h2>
+      Fresh Clothes.<br>
+      <span>Happy You.</span>
+    </h2>
 
     <p>
-      Professional Laundry & Dry Cleaning
+      Professional washing, ironing & dry cleaning
+      delivered right to your doorstep.
     </p>
 
-    <span>
-      Pickup & Delivery • 2–3 Days
+    <button
+      class="hero-btn"
+      onclick="document.getElementById('orderBox').scrollIntoView({behavior:'smooth'})"
+    >
+      Book Pickup <span>→</span>
+    </button>
+
+  </div>
+
+  <div class="delivery-card">
+
+    <div class="delivery-icon">
+      🚚
+    </div>
+
+    <div class="delivery-info">
+      <strong>Pickup & Delivery</strong>
+      <span>2–3 days service</span>
+    </div>
+
+    <div class="delivery-price">
+      <strong>FREE</strong>
+      <span>₹300+ orders</span>
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- SERVICES -->
+<section class="section">
+
+  <div class="section-title">
+    <span class="mini-label">WHAT WE OFFER</span>
+    <h2>Our Services</h2>
+  </div>
+
+  <div class="services">
+
+    <div
+      class="service-card featured"
+      onclick="selectService('Wash & Fold')"
+    >
+
+      <div class="service-top">
+        <div class="service-icon">👕</div>
+        <span class="arrow">↗</span>
+      </div>
+
+      <h3>Wash & Fold</h3>
+
+      <p>
+        Freshly washed and neatly folded clothes.
+      </p>
+
+      <div class="service-price">
+        <strong>₹269</strong>
+        <span>minimum 4 KG</span>
+      </div>
+
+      <small>₹69 / KG after minimum</small>
+
+    </div>
+
+
+    <div
+      class="service-card"
+      onclick="selectService('Wash & Iron')"
+    >
+
+      <div class="service-top">
+        <div class="service-icon">👔</div>
+        <span class="arrow">↗</span>
+      </div>
+
+      <h3>Wash & Iron</h3>
+
+      <p>
+        Washed, pressed and ready to wear.
+      </p>
+
+      <div class="service-price">
+        <strong>₹369</strong>
+        <span>minimum 4 KG</span>
+      </div>
+
+      <small>₹95 / KG after minimum</small>
+
+    </div>
+
+
+    <div
+      class="service-card"
+      onclick="selectService('Dry Cleaning')"
+    >
+
+      <div class="service-top">
+        <div class="service-icon">✨</div>
+        <span class="arrow">↗</span>
+      </div>
+
+      <h3>Dry Cleaning</h3>
+
+      <p>
+        Premium care for your special clothes.
+      </p>
+
+      <div class="service-price">
+        <strong>Custom</strong>
+        <span>price</span>
+      </div>
+
+      <small>Contact us for pricing</small>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ORDER -->
+<section class="order-section" id="orderBox">
+
+  <div class="order-heading">
+
+    <span class="mini-label">
+      QUICK & EASY
     </span>
 
-  </footer>
+    <h2>Place Your Order</h2>
+
+    <p>
+      Enter your details and we'll arrange your pickup.
+    </p>
+
+  </div>
 
 
-  <script src="/app.js"></script>
+  <div class="order-box">
+
+    <form id="orderForm">
+
+      <div class="input-group">
+
+        <label>Your Name</label>
+
+        <input
+          id="name"
+          type="text"
+          placeholder="Enter your name"
+          required
+        >
+
+      </div>
+
+
+      <div class="input-group">
+
+        <label>Mobile Number</label>
+
+        <input
+          id="phone"
+          type="tel"
+          inputmode="numeric"
+          maxlength="10"
+          placeholder="10 digit mobile number"
+          required
+        >
+
+      </div>
+
+
+      <div class="input-group">
+
+        <label>Service</label>
+
+        <select id="service" required>
+
+          <option value="">
+            Select service
+          </option>
+
+          <option value="Wash & Fold">
+            Wash & Fold
+          </option>
+
+          <option value="Wash & Iron">
+            Wash & Iron
+          </option>
+
+          <option value="Dry Cleaning">
+            Dry Cleaning
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <div class="input-group">
+
+        <label>Quantity / Weight</label>
+
+        <input
+          id="quantity"
+          type="number"
+          min="1"
+          step="0.1"
+          placeholder="Enter KG / pieces"
+          required
+        >
+
+      </div>
+
+
+      <div class="input-group">
+
+        <label>Pickup Address</label>
+
+        <textarea
+          id="address"
+          rows="3"
+          placeholder="Enter complete pickup address"
+          required
+        ></textarea>
+
+      </div>
+
+
+      <button
+        class="place-order-btn"
+        type="submit"
+      >
+        Place Order
+        <span>→</span>
+      </button>
+
+    </form>
+
+
+    <div
+      id="orderResult"
+      class="result hidden"
+    ></div>
+
+  </div>
+
+</section>
+
+
+<!-- TRACK ORDER -->
+<section class="tracking-section">
+
+  <div class="tracking-card">
+
+    <div class="tracking-icon">
+      📦
+    </div>
+
+    <div class="tracking-content">
+
+      <span class="mini-label">
+        ORDER STATUS
+      </span>
+
+      <h2>Track Your Order</h2>
+
+      <p>
+        Enter your mobile number to see your latest orders.
+      </p>
+
+
+      <div class="track-row">
+
+        <input
+          id="trackPhone"
+          type="tel"
+          inputmode="numeric"
+          maxlength="10"
+          placeholder="Enter mobile number"
+        >
+
+        <button onclick="trackOrder()">
+          Track
+        </button>
+
+      </div>
+
+
+      <div id="trackingResult"></div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- =========================
+     ADMIN PANEL
+========================= -->
+
+<section
+  id="adminPanel"
+  class="admin-panel hidden"
+>
+
+  <div class="admin-header">
+
+    <div>
+
+      <span class="mini-label">
+        STAFF ONLY
+      </span>
+
+      <h2>Admin Panel</h2>
+
+      <p>
+        Laundry Desire Hub
+      </p>
+
+    </div>
+
+    <button onclick="hideAdmin()">
+      ✕
+    </button>
+
+  </div>
+
+
+  <!-- ADMIN LOGIN -->
+
+  <div id="adminLogin">
+
+    <div class="input-group">
+
+      <label>Username</label>
+
+      <input
+        id="adminUser"
+        type="text"
+        placeholder="Admin username"
+      >
+
+    </div>
+
+
+    <div class="input-group">
+
+      <label>Password</label>
+
+      <input
+        id="adminPass"
+        type="password"
+        placeholder="Admin password"
+      >
+
+    </div>
+
+
+    <button
+      class="place-order-btn"
+      onclick="adminLogin()"
+    >
+
+      Login
+
+      <span>→</span>
+
+    </button>
+
+
+    <p
+      id="loginError"
+      class="error-text"
+    ></p>
+
+  </div>
+
+
+  <!-- ADMIN CONTENT -->
+
+  <div
+    id="adminContent"
+    class="hidden"
+  >
+
+
+    <!-- STATS -->
+
+    <div class="admin-stats">
+
+      <div class="stat-card">
+
+        <strong id="totalOrders">
+          0
+        </strong>
+
+        <span>
+          Total Orders
+        </span>
+
+      </div>
+
+
+      <div class="stat-card">
+
+        <strong id="readyOrders">
+          0
+        </strong>
+
+        <span>
+          Ready
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <!-- FILTER -->
+
+    <div class="admin-toolbar">
+
+      <select
+        id="adminFilter"
+        onchange="loadAdminOrders()"
+      >
+
+        <option value="All">
+          All Orders
+        </option>
+
+        <option value="Received">
+          Received
+        </option>
+
+        <option value="Picked Up">
+          Picked Up
+        </option>
+
+        <option value="Cleaning">
+          Cleaning
+        </option>
+
+        <option value="Ready">
+          Ready
+        </option>
+
+        <option value="Delivered">
+          Delivered
+        </option>
+
+        <option value="Not Ready">
+          Not Ready
+        </option>
+
+      </select>
+
+
+      <button
+        onclick="loadAdminOrders()"
+      >
+        🔄 Refresh
+      </button>
+
+    </div>
+
+
+    <!-- ORDER LIST -->
+
+    <div id="ordersList">
+
+      <p>
+        Loading orders...
+      </p>
+
+    </div>
+
+
+  </div>
+
+</section>
+
+</main>
+
+
+<!-- FOOTER -->
+
+<footer>
+
+  <div class="footer-logo">
+    Laundry Desire Hub
+  </div>
+
+  <p>
+    Professional Laundry & Dry Cleaning
+  </p>
+
+  <span>
+    Pickup & Delivery • 2–3 Days
+  </span>
+
+</footer>
+
+
+<script src="/app.js"></script>
 
 </body>
-  </html>
+</html>
