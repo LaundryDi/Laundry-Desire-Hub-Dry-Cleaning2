@@ -1,1 +1,12 @@
-{"name":"laundry-desire-hub","version":"2.0.0","private":true,"scripts":{"dev":"wrangler dev","deploy":"wrangler deploy"},"devDependencies":{"wrangler":"^4.68.0"}}
+{
+  "name": "laundry-desire-hub",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute laundry-desire-hub-db --remote --file=./schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.127.1"
+  }
+}
