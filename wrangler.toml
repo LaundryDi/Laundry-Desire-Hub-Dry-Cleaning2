@@ -1,5 +1,5 @@
-name = "laundry-desire-hub"
-main = "app.js"
+name = "laundry-desire-hub-dry-cleaning2"
+main = "public/app.js"
 compatibility_date = "2026-08-29"
 
 [assets]
@@ -8,4 +8,4 @@ directory = "./public"
 [[d1_databases]]
 binding = "DB"
 database_name = "laundry-desire-hub-db"
-database_id = "YAHAN_APNI_D1_DATABASE_ID_DALO"
+database_id = "c659f4ea-f32e-46c9-b324-913081e5dd63"
