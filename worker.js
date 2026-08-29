@@ -1,19 +1,329 @@
-const PRICES={'Wash & Fold':{minKg:4,minPrice:269,perKg:69},'Wash & Iron':{minKg:4,minPrice:369,perKg:95}};
-const STATUS=['Received','Picked Up','Cleaning','Ready','Delivered'];
-const j=(d,s=200,h={})=>new Response(JSON.stringify(d),{status:s,headers:{'content-type':'application/json; charset=UTF-8',...h}});
-const price=(s,k)=>{const p=PRICES[s];if(!p)return null;k=Math.max(p.minKg,Number(k)||p.minKg);return p.minPrice+Math.max(0,k-p.minKg)*p.perKg};
-function cookie(req,n){const x=(req.headers.get('Cookie')||'').split(';').map(v=>v.trim()).find(v=>v.startsWith(n+'='));return x?decodeURIComponent(x.slice(n.length+1)):null}
-async function sig(secret,text){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);const s=await crypto.subtle.sign('HMAC',k,new TextEncoder().encode(text));return [...new Uint8Array(s)].map(b=>b.toString(16).padStart(2,'0')).join('')}
-async function admin(req,env){const t=cookie(req,'ldh_admin');if(!t||!env.ADMIN_PASSWORD)return false;const [e,s]=t.split('.');return !!e&&!!s&&Number(e)>Date.now()&&s===await sig(env.ADMIN_PASSWORD,e)}
-async function api(req,env,url){
- if(!env.DB)return j({error:'Database is not connected yet.'},500);
- if(url.pathname==='/api/prices'&&req.method==='GET')return j(PRICES);
- if(url.pathname==='/api/orders'&&req.method==='POST'){const b=await req.json(),name=String(b.customerName||'').trim(),mobile=String(b.mobile||'').replace(/\D/g,''),address=String(b.address||'').trim(),service=String(b.service||''),kg=Math.max(4,Number(b.kg)||4);if(!name||mobile.length!==10||!address||!PRICES[service])return j({error:'Please enter name, valid 10-digit mobile, address and service.'},400);const subtotal=price(service,kg),deliveryFee=subtotal>=300?0:50,total=subtotal+deliveryFee,id='LDH-'+crypto.randomUUID().slice(0,8).toUpperCase(),createdAt=new Date().toISOString();await env.DB.prepare("INSERT INTO orders (id,customer_name,mobile,address,pickup_date,service,kg,subtotal,delivery_fee,total,status,ready,signature,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,'Received',0,'',?)").bind(id,name,mobile,address,String(b.pickupDate||''),service,kg,subtotal,deliveryFee,total,createdAt).run();return j({id,customerName:name,mobile,address,pickupDate:String(b.pickupDate||''),service,kg,subtotal,deliveryFee,total,status:'Received',ready:false,createdAt})}
- if(url.pathname==='/api/customer/orders'&&req.method==='POST'){const b=await req.json(),m=String(b.mobile||'').replace(/\D/g,'');if(m.length!==10)return j({error:'Enter a valid 10-digit mobile number.'},400);const {results}=await env.DB.prepare('SELECT * FROM orders WHERE mobile=? ORDER BY created_at DESC LIMIT 20').bind(m).all();return j(results.map(o=>({...o,customerName:o.customer_name,pickupDate:o.pickup_date,deliveryFee:o.delivery_fee,ready:!!o.ready})))}
- if(url.pathname==='/api/admin/login'&&req.method==='POST'){const b=await req.json();if(!env.ADMIN_PASSWORD||String(b.username||'')!=='Laundry'||String(b.password||'')!==env.ADMIN_PASSWORD)return j({error:'Invalid admin login.'},401);const e=String(Date.now()+43200000);return j({ok:true},200,{'Set-Cookie':`ldh_admin=${encodeURIComponent(e+'.'+await sig(env.ADMIN_PASSWORD,e))}; Max-Age=43200; Path=/; HttpOnly; Secure; SameSite=Lax`})}
- if(url.pathname==='/api/admin/logout'&&req.method==='POST')return j({ok:true},200,{'Set-Cookie':'ldh_admin=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax'});
- if(url.pathname==='/api/admin/orders'&&req.method==='GET'){if(!await admin(req,env))return j({error:'Admin login required.'},401);const {results}=await env.DB.prepare('SELECT * FROM orders ORDER BY created_at DESC LIMIT 500').all();return j(results.map(o=>({...o,customerName:o.customer_name,pickupDate:o.pickup_date,deliveryFee:o.delivery_fee,ready:!!o.ready})))}
- const m=url.pathname.match(/^\/api\/admin\/orders\/([^/]+)$/);if(m&&req.method==='PATCH'){if(!await admin(req,env))return j({error:'Admin login required.'},401);const b=await req.json(),sets=[],v=[];if(b.status&&STATUS.includes(b.status)){sets.push('status=?');v.push(b.status)}if(typeof b.ready==='boolean'){sets.push('ready=?');v.push(b.ready?1:0)}if(typeof b.signature==='string'){sets.push('signature=?');v.push(b.signature.slice(0,200))}if(!sets.length)return j({error:'Nothing to update.'},400);v.push(m[1]);const r=await env.DB.prepare(`UPDATE orders SET ${sets.join(',')} WHERE id=?`).bind(...v).run();return r.meta.changes?j({ok:true}):j({error:'Order not found.'},404)}
- return j({error:'Not found.'},404)
+const API = "/api";
+
+function selectService(service) {
+  document.getElementById("service").value = service;
+  document.getElementById("orderForm").scrollIntoView({
+    behavior: "smooth"
+  });
 }
-export default{async fetch(req,env){const u=new URL(req.url);return u.pathname.startsWith('/api/')?api(req,env,u):env.ASSETS.fetch(req)}};
+
+document.getElementById("orderForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+
+  const name = document.getElementById("name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const service = document.getElementById("service").value;
+  const quantity = Number(document.getElementById("quantity").value);
+  const address = document.getElementById("address").value.trim();
+
+  if (!/^[0-9]{10}$/.test(phone)) {
+    alert("10 digit mobile number dalo.");
+    return;
+  }
+
+  try {
+    const response = await fetch(API + "/orders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        customerName: name,
+        mobile: phone,
+        service: service,
+        kg: quantity,
+        address: address
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert(data.error || "Order place nahi hua.");
+      return;
+    }
+
+    document.getElementById("orderResult").classList.remove("hidden");
+
+    document.getElementById("orderResult").innerHTML = `
+      <strong>🎉 Order Successfully Placed!</strong>
+      <br><br>
+      Order ID: <b>${data.id}</b>
+      <br>
+      Total: <b>₹${data.total}</b>
+      <br>
+      Delivery: 2–3 days
+      <br><br>
+      Order ID save karke rakho.
+    `;
+
+    document.getElementById("orderForm").reset();
+
+  } catch (error) {
+    alert("Server se connection nahi ho raha.");
+  }
+});
+
+
+async function trackOrder() {
+
+  const phone = document.getElementById("trackPhone").value.trim();
+  const box = document.getElementById("trackingResult");
+
+  if (!/^[0-9]{10}$/.test(phone)) {
+    box.innerHTML = `<div class="result">10 digit mobile number dalo.</div>`;
+    return;
+  }
+
+  try {
+
+    const response = await fetch(API + "/customer/orders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        mobile: phone
+      })
+    });
+
+    const orders = await response.json();
+
+    if (!response.ok || !orders.length) {
+      box.innerHTML = `
+        <div class="result">
+          Koi order nahi mila.
+        </div>
+      `;
+      return;
+    }
+
+    box.innerHTML = orders.map(order => `
+      <div class="result" style="margin-top:10px">
+        <b>${order.id}</b><br>
+        ${order.service}<br>
+        Quantity: ${order.kg} KG<br>
+        Total: ₹${order.total}<br>
+        Status: <strong>${order.status}</strong>
+      </div>
+    `).join("");
+
+  } catch {
+    box.innerHTML = `
+      <div class="result">
+        Server se connection nahi ho raha.
+      </div>
+    `;
+  }
+}
+
+
+function showAdmin() {
+  document.getElementById("adminPanel").classList.remove("hidden");
+
+  document.getElementById("adminPanel").scrollIntoView({
+    behavior: "smooth"
+  });
+}
+
+
+function hideAdmin() {
+  document.getElementById("adminPanel").classList.add("hidden");
+}
+
+
+async function adminLogin() {
+
+  const username = document.getElementById("adminUser").value.trim();
+  const password = document.getElementById("adminPass").value;
+
+  const error = document.getElementById("loginError");
+
+  try {
+
+    const response = await fetch(API + "/admin/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        username,
+        password
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      error.textContent = data.error || "Login failed.";
+      return;
+    }
+
+    document.getElementById("adminLogin").classList.add("hidden");
+    document.getElementById("adminContent").classList.remove("hidden");
+
+    loadAdminOrders();
+
+  } catch {
+    error.textContent = "Server se connection nahi ho raha.";
+  }
+}
+
+
+async function loadAdminOrders() {
+
+  const list = document.getElementById("ordersList");
+
+  try {
+
+    const response = await fetch(API + "/admin/orders", {
+      method: "GET",
+      credentials: "include"
+    });
+
+    const orders = await response.json();
+
+    if (!response.ok) {
+      list.innerHTML = `<p>Admin login required.</p>`;
+      return;
+    }
+
+    document.getElementById("totalOrders").textContent =
+      orders.length;
+
+    document.getElementById("readyOrders").textContent =
+      orders.filter(o => o.status === "Ready").length;
+
+    if (!orders.length) {
+      list.innerHTML = "<p>Abhi koi order nahi hai.</p>";
+      return;
+    }
+
+    list.innerHTML = orders.map(order => `
+      <div class="order-admin">
+
+        <h3>${order.id}</h3>
+
+        <p>
+          <b>${escapeHTML(order.customerName)}</b>
+          • ${escapeHTML(order.mobile)}
+        </p>
+
+        <p>
+          ${escapeHTML(order.service)}
+          • ${order.kg} KG
+        </p>
+
+        <p>
+          Total: <b>₹${order.total}</b>
+        </p>
+
+        <p>
+          Address: ${escapeHTML(order.address)}
+        </p>
+
+        <p>
+          Status:
+          <strong>${escapeHTML(order.status)}</strong>
+        </p>
+
+        <select onchange="changeStatus('${order.id}', this.value)">
+          ${[
+            "Received",
+            "Picked Up",
+            "Cleaning",
+            "Ready",
+            "Delivered"
+          ].map(status => `
+            <option
+              value="${status}"
+              ${order.status === status ? "selected" : ""}
+            >
+              ${status}
+            </option>
+          `).join("")}
+        </select>
+
+        <input
+          style="margin-top:8px"
+          placeholder="Signature"
+          value="${escapeHTML(order.signature || "")}"
+          onchange="changeSignature('${order.id}', this.value)"
+        >
+
+      </div>
+    `).join("");
+
+  } catch {
+    list.innerHTML = `
+      <p>Orders load nahi ho rahe.</p>
+    `;
+  }
+}
+
+
+async function changeStatus(id, status) {
+
+  try {
+
+    const response = await fetch(
+      API + "/admin/orders/" + encodeURIComponent(id),
+      {
+        method: "PATCH",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          status: status,
+          ready: status === "Ready"
+        })
+      }
+    );
+
+    if (!response.ok) {
+      alert("Status update nahi hua.");
+      return;
+    }
+
+    loadAdminOrders();
+
+  } catch {
+    alert("Server error.");
+  }
+}
+
+
+async function changeSignature(id, signature) {
+
+  try {
+
+    await fetch(
+      API + "/admin/orders/" + encodeURIComponent(id),
+      {
+        method: "PATCH",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          signature: signature
+        })
+      }
+    );
+
+  } catch {
+    alert("Signature save nahi hua.");
+  }
+}
+
+
+function escapeHTML(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
