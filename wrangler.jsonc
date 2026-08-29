@@ -1,8 +1,17 @@
 {
- "$schema":"node_modules/wrangler/config-schema.json",
- "name":"laundry-desire-hub",
- "main":"worker.js",
- "compatibility_date":"2026-08-27",
- "assets":{"binding":"ASSETS","directory":"public"},
- "d1_databases":[{"binding":"DB","database_name":"laundry-desire-hub-db","database_id":"REPLACE_WITH_YOUR_D1_DATABASE_ID"}]
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "laundry-desire-hub-dry-cleaning2",
+  "main": "worker.js",
+  "compatibility_date": "2026-08-27",
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "public"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "laundry-desire-hub-db",
+      "database_id": "c659f4ea-f32e-46c9-b324-913081e5dd63"
+    }
+  ]
 }
