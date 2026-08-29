@@ -1,787 +1,1199 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#0b63f6">
+const API = "/api";
 
-  <title>Laundry Desire Hub – Dry Cleaning</title>
+/* =========================
+   GLOBAL
+========================= */
 
-  <link rel="stylesheet" href="/style.css">
-</head>
-
-<body>
-
-<header class="topbar">
-
-  <div class="brand">
-
-    <div class="brand-mark">
-      LD
-    </div>
-
-    <div>
-      <h1>Laundry Desire Hub</h1>
-      <span>DRY CLEANING</span>
-    </div>
-
-  </div>
-
-  <button
-    class="admin-btn"
-    onclick="showAdmin()"
-  >
-    Admin
-  </button>
-
-</header>
+let allAdminOrders = [];
 
 
-<main>
+/* =========================
+   SERVICE SELECT
+========================= */
 
-<!-- ================= HERO ================= -->
+function selectService(service) {
+  const select = document.getElementById("service");
+  const form = document.getElementById("orderForm");
 
-<section class="hero">
+  if (select) {
+    select.value = service;
+  }
 
-  <div class="hero-content">
-
-    <div class="premium-badge">
-      ✦ PREMIUM LAUNDRY SERVICE
-    </div>
-
-    <h2>
-      Fresh Clothes.<br>
-      <span>Happy You.</span>
-    </h2>
-
-    <p>
-      Professional washing, ironing & dry cleaning
-      delivered right to your doorstep.
-    </p>
-
-    <button
-      class="hero-btn"
-      onclick="document.getElementById('orderBox').scrollIntoView({behavior:'smooth'})"
-    >
-      Book Pickup <span>→</span>
-    </button>
-
-  </div>
+  if (form) {
+    form.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }
+}
 
 
-  <div class="delivery-card">
+/* =========================
+   RESULT MESSAGE
+========================= */
 
-    <div class="delivery-icon">
-      🚚
-    </div>
+function showResult(message, error = false) {
+  const box = document.getElementById("orderResult");
 
-    <div class="delivery-info">
+  if (!box) return;
 
-      <strong>
-        Pickup & Delivery
-      </strong>
+  box.classList.remove("hidden");
+  box.innerHTML = message;
 
-      <span>
-        2–3 days service
-      </span>
-
-    </div>
-
-    <div class="delivery-price">
-
-      <strong>
-        FREE
-      </strong>
-
-      <span>
-        ₹300+ orders
-      </span>
-
-    </div>
-
-  </div>
-
-</section>
+  if (error) {
+    box.style.background = "#fff1f1";
+    box.style.color = "#b42318";
+    box.style.borderColor = "#ffd5d5";
+  } else {
+    box.style.background = "#eef8f0";
+    box.style.color = "#17651d";
+    box.style.borderColor = "#d6ecd9";
+  }
+}
 
 
-<!-- ================= SERVICES ================= -->
+/* =========================
+   ESCAPE SECURITY
+========================= */
 
-<section class="section">
-
-  <div class="section-title">
-
-    <div>
-
-      <span class="mini-label">
-        WHAT WE OFFER
-      </span>
-
-      <h2>
-        Our Services
-      </h2>
-
-    </div>
-
-  </div>
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
 
-  <div class="services">
+/* =========================
+   ADMIN OPEN / CLOSE
+========================= */
 
-    <div
-      class="service-card featured"
-      onclick="selectService('Wash & Fold')"
-    >
+function showAdmin() {
+  const panel = document.getElementById("adminPanel");
 
-      <div class="service-top">
+  if (!panel) return;
 
-        <div class="service-icon">
-          👕
-        </div>
+  panel.classList.remove("hidden");
 
-        <span class="arrow">
-          ↗
-        </span>
+  panel.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+}
 
-      </div>
 
-      <h3>
-        Wash & Fold
-      </h3>
+function hideAdmin() {
+  const panel = document.getElementById("adminPanel");
 
-      <p>
-        Freshly washed and neatly folded clothes.
-      </p>
+  if (panel) {
+    panel.classList.add("hidden");
+  }
+}
 
-      <div class="service-price">
+
+/* =========================
+   PLACE ORDER
+========================= */
+
+const orderForm = document.getElementById("orderForm");
+
+if (orderForm) {
+
+  orderForm.addEventListener("submit", async function (e) {
+
+    e.preventDefault();
+
+    const name =
+      document.getElementById("name").value.trim();
+
+    const phone =
+      document.getElementById("phone").value
+        .replace(/\D/g, "");
+
+    const service =
+      document.getElementById("service").value;
+
+    const quantity =
+      Number(document.getElementById("quantity").value);
+
+    const address =
+      document.getElementById("address").value.trim();
+
+
+    /* VALIDATION */
+
+    if (!name) {
+      showResult("Please enter your name.", true);
+      return;
+    }
+
+    if (!/^[0-9]{10}$/.test(phone)) {
+      showResult(
+        "Please enter a valid 10-digit mobile number.",
+        true
+      );
+      return;
+    }
+
+    if (!service) {
+      showResult("Please select a service.", true);
+      return;
+    }
+
+    if (!quantity || quantity <= 0) {
+      showResult(
+        "Please enter quantity / weight.",
+        true
+      );
+      return;
+    }
+
+    if (!address) {
+      showResult(
+        "Please enter your pickup address.",
+        true
+      );
+      return;
+    }
+
+
+    const button =
+      document.querySelector(
+        "#orderForm .place-order-btn"
+      );
+
+    button.disabled = true;
+    button.innerHTML = "Placing Order...";
+
+
+    try {
+
+      const response = await fetch(
+        API + "/orders",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body: JSON.stringify({
+            customerName: name,
+            mobile: phone,
+            address: address,
+            service: service,
+            kg: quantity,
+            pickupDate: ""
+          })
+        }
+      );
+
+
+      const data = await response.json();
+
+
+      if (!response.ok) {
+
+        throw new Error(
+          data.error ||
+          "Unable to place order."
+        );
+
+      }
+
+
+      showResult(`
+        <strong>Order Successfully Placed! 🎉</strong>
+        <br><br>
+
+        Order ID:
+        <b>${escapeHtml(data.id)}</b>
+
+        <br>
+
+        Service:
+        ${escapeHtml(data.service)}
+
+        <br>
+
+        Weight:
+        ${escapeHtml(data.kg)} KG
+
+        <br>
+
+        Amount:
+        ₹${escapeHtml(data.amount)}
+
+        <br>
+
+        Delivery:
+        ₹${escapeHtml(data.delivery)}
+
+        <br>
+
+        Total:
+        <b>₹${escapeHtml(data.total)}</b>
+
+        <br>
+
+        Status:
+        <b>${escapeHtml(data.status)}</b>
+
+        <br><br>
+
+        Delivery:
+        2–3 days
+
+        <br><br>
 
         <strong>
-          ₹269
+          Is Order ID ko save karke rakho.
         </strong>
+      `);
 
-        <span>
-          minimum 4 KG
-        </span>
 
-      </div>
+      orderForm.reset();
 
-      <small>
-        ₹69 / KG after minimum
-      </small>
 
-    </div>
+    } catch (error) {
 
+      showResult(
+        escapeHtml(
+          error.message ||
+          "Something went wrong."
+        ),
+        true
+      );
 
-    <div
-      class="service-card"
-      onclick="selectService('Wash & Iron')"
-    >
+    } finally {
 
-      <div class="service-top">
+      button.disabled = false;
 
-        <div class="service-icon">
-          👔
-        </div>
-
-        <span class="arrow">
-          ↗
-        </span>
-
-      </div>
-
-      <h3>
-        Wash & Iron
-      </h3>
-
-      <p>
-        Washed, pressed and ready to wear.
-      </p>
-
-      <div class="service-price">
-
-        <strong>
-          ₹369
-        </strong>
-
-        <span>
-          minimum 4 KG
-        </span>
-
-      </div>
-
-      <small>
-        ₹95 / KG after minimum
-      </small>
-
-    </div>
-
-
-    <div
-      class="service-card"
-      onclick="selectService('Dry Cleaning')"
-    >
-
-      <div class="service-top">
-
-        <div class="service-icon">
-          ✨
-        </div>
-
-        <span class="arrow">
-          ↗
-        </span>
-
-      </div>
-
-      <h3>
-        Dry Cleaning
-      </h3>
-
-      <p>
-        Premium care for your special clothes.
-      </p>
-
-      <div class="service-price">
-
-        <strong>
-          Custom
-        </strong>
-
-        <span>
-          price
-        </span>
-
-      </div>
-
-      <small>
-        Contact us for pricing
-      </small>
-
-    </div>
-
-  </div>
-
-</section>
-
-
-<!-- ================= ORDER ================= -->
-
-<section
-  class="order-section"
-  id="orderBox"
->
-
-  <div class="order-heading">
-
-    <span class="mini-label">
-      QUICK & EASY
-    </span>
-
-    <h2>
-      Place Your Order
-    </h2>
-
-    <p>
-      Enter your details and we'll arrange your pickup.
-    </p>
-
-  </div>
-
-
-  <div class="order-box">
-
-    <form id="orderForm">
-
-      <div class="input-group">
-
-        <label>
-          Your Name
-        </label>
-
-        <input
-          id="name"
-          type="text"
-          placeholder="Enter your name"
-          required
-        >
-
-      </div>
-
-
-      <div class="input-group">
-
-        <label>
-          Mobile Number
-        </label>
-
-        <input
-          id="phone"
-          type="tel"
-          inputmode="numeric"
-          maxlength="10"
-          placeholder="10 digit mobile number"
-          required
-        >
-
-      </div>
-
-
-      <div class="input-group">
-
-        <label>
-          Service
-        </label>
-
-        <select
-          id="service"
-          required
-        >
-
-          <option value="">
-            Select service
-          </option>
-
-          <option value="Wash & Fold">
-            Wash & Fold
-          </option>
-
-          <option value="Wash & Iron">
-            Wash & Iron
-          </option>
-
-          <option value="Dry Cleaning">
-            Dry Cleaning
-          </option>
-
-        </select>
-
-      </div>
-
-
-      <div class="input-group">
-
-        <label>
-          Quantity / Weight
-        </label>
-
-        <input
-          id="quantity"
-          type="number"
-          min="1"
-          step="0.1"
-          placeholder="Enter KG / pieces"
-          required
-        >
-
-      </div>
-
-
-      <div class="input-group">
-
-        <label>
-          Pickup Address
-        </label>
-
-        <textarea
-          id="address"
-          rows="3"
-          placeholder="Enter complete pickup address"
-          required
-        ></textarea>
-
-      </div>
-
-
-      <button
-        class="place-order-btn"
-        type="submit"
-      >
-
+      button.innerHTML = `
         Place Order
+        <span>→</span>
+      `;
 
-        <span>
-          →
-        </span>
+    }
 
-      </button>
+  });
 
-    </form>
-
-
-    <div
-      id="orderResult"
-      class="result hidden"
-    ></div>
-
-  </div>
-
-</section>
+}
 
 
-<!-- ================= TRACKING ================= -->
+/* =========================
+   TRACK ORDER
+========================= */
 
-<section class="tracking-section">
+async function trackOrder() {
 
-  <div class="tracking-card">
+  const input =
+    document.getElementById("trackPhone");
 
-    <div class="tracking-icon">
-      📦
+  const box =
+    document.getElementById("trackingResult");
+
+
+  if (!input || !box) return;
+
+
+  const phone =
+    input.value.replace(/\D/g, "");
+
+
+  if (!/^[0-9]{10}$/.test(phone)) {
+
+    box.innerHTML = `
+      <div class="result">
+        Please enter a valid 10-digit mobile number.
+      </div>
+    `;
+
+    return;
+  }
+
+
+  box.innerHTML = `
+    <div class="result">
+      Checking your orders...
     </div>
+  `;
 
-    <div class="tracking-content">
 
-      <span class="mini-label">
-        ORDER STATUS
-      </span>
+  try {
 
-      <h2>
-        Track Your Order
-      </h2>
+    const response = await fetch(
+      API + "/customer/orders",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          mobile: phone
+        })
+      }
+    );
+
+
+    const data = await response.json();
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        data.error ||
+        "Unable to find orders."
+      );
+
+    }
+
+
+    if (!data.length) {
+
+      box.innerHTML = `
+        <div class="result">
+          No order found for this mobile number.
+        </div>
+      `;
+
+      return;
+    }
+
+
+    box.innerHTML = data.map(order => `
+
+      <div
+        class="result"
+        style="margin-top:10px"
+      >
+
+        <b>
+          Order ${escapeHtml(order.id)}
+        </b>
+
+        <br>
+
+        Customer:
+        ${escapeHtml(order.customerName || "")}
+
+        <br>
+
+        Service:
+        ${escapeHtml(order.service || "")}
+
+        <br>
+
+        Weight:
+        ${escapeHtml(String(order.kg || 0))} KG
+
+        <br>
+
+        Amount:
+        ₹${escapeHtml(String(order.amount || 0))}
+
+        <br>
+
+        Delivery:
+        ₹${escapeHtml(String(order.delivery || 0))}
+
+        <br>
+
+        Total:
+        <b>
+          ₹${escapeHtml(String(order.total || 0))}
+        </b>
+
+        <br>
+
+        Status:
+        <strong>
+          ${escapeHtml(order.status || "Received")}
+        </strong>
+
+      </div>
+
+    `).join("");
+
+
+  } catch (error) {
+
+    box.innerHTML = `
+      <div class="result">
+        ${escapeHtml(
+          error.message ||
+          "Something went wrong."
+        )}
+      </div>
+    `;
+
+  }
+
+}
+
+
+/* =========================
+   ADMIN LOGIN
+========================= */
+
+async function adminLogin() {
+
+  const username =
+    document.getElementById("adminUser")
+      ?.value.trim();
+
+  const password =
+    document.getElementById("adminPass")
+      ?.value;
+
+  const errorBox =
+    document.getElementById("loginError");
+
+
+  if (!errorBox) return;
+
+  errorBox.textContent = "";
+
+
+  if (!username || !password) {
+
+    errorBox.textContent =
+      "Username aur password dono dalo.";
+
+    return;
+  }
+
+
+  try {
+
+    const response = await fetch(
+      API + "/admin/login",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          username,
+          password
+        })
+      }
+    );
+
+
+    const data = await response.json();
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        data.error ||
+        "Invalid admin login."
+      );
+
+    }
+
+
+    document
+      .getElementById("adminLogin")
+      .classList.add("hidden");
+
+    document
+      .getElementById("adminContent")
+      .classList.remove("hidden");
+
+
+    await loadAdminOrders();
+
+
+  } catch (error) {
+
+    errorBox.textContent =
+      error.message ||
+      "Login failed.";
+
+  }
+
+}
+
+
+/* =========================
+   ADMIN LOGOUT
+========================= */
+
+function adminLogout() {
+
+  document
+    .getElementById("adminContent")
+    .classList.add("hidden");
+
+  document
+    .getElementById("adminLogin")
+    .classList.remove("hidden");
+
+  document
+    .getElementById("adminUser")
+    .value = "";
+
+  document
+    .getElementById("adminPass")
+    .value = "";
+
+  document
+    .getElementById("loginError")
+    .textContent = "";
+
+}
+
+
+/* =========================
+   LOAD ADMIN ORDERS
+========================= */
+
+async function loadAdminOrders() {
+
+  const list =
+    document.getElementById("ordersList");
+
+
+  if (!list) return;
+
+
+  list.innerHTML = `
+    <div class="result">
+      Loading orders...
+    </div>
+  `;
+
+
+  try {
+
+    const response = await fetch(
+      API + "/admin/orders"
+    );
+
+
+    const data = await response.json();
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        data.error ||
+        "Unable to load orders."
+      );
+
+    }
+
+
+    allAdminOrders =
+      Array.isArray(data)
+        ? data
+        : [];
+
+
+    updateAdminStats(
+      allAdminOrders
+    );
+
+
+    renderAdminOrders();
+
+
+  } catch (error) {
+
+    list.innerHTML = `
+      <div class="result">
+        ${escapeHtml(
+          error.message ||
+          "Unable to load orders."
+        )}
+      </div>
+    `;
+
+  }
+
+}
+
+
+/* =========================
+   ADMIN STATS
+========================= */
+
+function updateAdminStats(orders) {
+
+  const total =
+    orders.length;
+
+  const received =
+    orders.filter(
+      o => o.status === "Received"
+    ).length;
+
+  const pickedUp =
+    orders.filter(
+      o => o.status === "Picked Up"
+    ).length;
+
+  const cleaning =
+    orders.filter(
+      o => o.status === "Cleaning"
+    ).length;
+
+  const ready =
+    orders.filter(
+      o => o.status === "Ready"
+    ).length;
+
+  const delivered =
+    orders.filter(
+      o => o.status === "Delivered"
+    ).length;
+
+  const notReady =
+    orders.filter(
+      o => o.status === "Not Ready"
+    ).length;
+
+
+  setText("totalOrders", total);
+
+  setText(
+    "receivedOrders",
+    received
+  );
+
+  setText(
+    "pickedUpOrders",
+    pickedUp
+  );
+
+  setText(
+    "cleaningOrders",
+    cleaning
+  );
+
+  setText(
+    "readyOrders",
+    ready
+  );
+
+  setText(
+    "deliveredOrders",
+    delivered
+  );
+
+  setText(
+    "notReadyOrders",
+    notReady
+  );
+
+}
+
+
+function setText(id, value) {
+
+  const element =
+    document.getElementById(id);
+
+  if (element) {
+    element.textContent = value;
+  }
+
+}
+
+
+/* =========================
+   FILTER + SEARCH
+========================= */
+
+function renderAdminOrders() {
+
+  const list =
+    document.getElementById("ordersList");
+
+
+  if (!list) return;
+
+
+  const filter =
+    document.getElementById("adminFilter")
+      ?.value || "All";
+
+
+  const search =
+    document.getElementById("adminSearch")
+      ?.value
+      .trim()
+      .toLowerCase() || "";
+
+
+  let orders =
+    [...allAdminOrders];
+
+
+  /* FILTER */
+
+  if (filter !== "All") {
+
+    orders =
+      orders.filter(
+        order =>
+          order.status === filter
+      );
+
+  }
+
+
+  /* SEARCH */
+
+  if (search) {
+
+    orders =
+      orders.filter(order => {
+
+        const text = [
+
+          order.id,
+
+          order.customerName,
+
+          order.mobile,
+
+          order.service,
+
+          order.address,
+
+          order.status
+
+        ]
+          .join(" ")
+          .toLowerCase();
+
+
+        return text.includes(search);
+
+      });
+
+  }
+
+
+  /* EMPTY */
+
+  if (!orders.length) {
+
+    list.innerHTML = `
+      <div class="result">
+        No orders found.
+      </div>
+    `;
+
+    return;
+  }
+
+
+  /* RENDER */
+
+  list.innerHTML =
+    orders.map(
+      renderAdminOrder
+    ).join("");
+
+}
+
+
+/* =========================
+   ADMIN ORDER CARD
+========================= */
+
+function renderAdminOrder(order) {
+
+  const id =
+    escapeHtml(order.id);
+
+  const name =
+    escapeHtml(
+      order.customerName ||
+      "Customer"
+    );
+
+  const mobile =
+    escapeHtml(
+      order.mobile ||
+      ""
+    );
+
+  const service =
+    escapeHtml(
+      order.service ||
+      ""
+    );
+
+  const kg =
+    escapeHtml(
+      String(order.kg || 0)
+    );
+
+  const amount =
+    escapeHtml(
+      String(order.amount || 0)
+    );
+
+  const delivery =
+    escapeHtml(
+      String(order.delivery || 0)
+    );
+
+  const total =
+    escapeHtml(
+      String(order.total || 0)
+    );
+
+  const address =
+    escapeHtml(
+      order.address ||
+      "Address not available"
+    );
+
+  const status =
+    escapeHtml(
+      order.status ||
+      "Received"
+    );
+
+  const created =
+    order.createdAt
+      ? new Date(
+          order.createdAt
+        ).toLocaleString()
+      : "";
+
+
+  const statuses = [
+
+    "Received",
+
+    "Picked Up",
+
+    "Cleaning",
+
+    "Ready",
+
+    "Delivered",
+
+    "Not Ready"
+
+  ];
+
+
+  return `
+
+    <div class="order-admin">
+
+      <h3>
+        Order #${id}
+      </h3>
+
 
       <p>
-        Enter your mobile number to see your latest orders.
+        <b>Customer:</b>
+        ${name}
       </p>
 
 
-      <div class="track-row">
-
-        <input
-          id="trackPhone"
-          type="tel"
-          inputmode="numeric"
-          maxlength="10"
-          placeholder="Enter mobile number"
-        >
-
-        <button onclick="trackOrder()">
-          Track
-        </button>
-
-      </div>
-
-
-      <div id="trackingResult"></div>
-
-    </div>
-
-  </div>
-
-</section>
-
-
-<!-- ================= ADMIN ================= -->
-
-<section
-  id="adminPanel"
-  class="admin-panel hidden"
->
-
-  <div class="admin-header">
-
-    <div>
-
-      <span class="mini-label">
-        STAFF ONLY
-      </span>
-
-      <h2>
-        Admin Panel
-      </h2>
-
       <p>
-        Laundry Desire Hub
+        <b>Mobile:</b>
+        ${mobile}
       </p>
 
-    </div>
+
+      <p>
+        <b>Service:</b>
+        ${service}
+      </p>
 
 
-    <button
-      onclick="hideAdmin()"
-      aria-label="Close"
-    >
-      ✕
-    </button>
-
-  </div>
+      <p>
+        <b>Weight:</b>
+        ${kg} KG
+      </p>
 
 
-  <!-- ADMIN LOGIN -->
-
-  <div id="adminLogin">
-
-    <div class="input-group">
-
-      <label>
-        Username
-      </label>
-
-      <input
-        id="adminUser"
-        type="text"
-        placeholder="Admin username"
-      >
-
-    </div>
+      <p>
+        <b>Amount:</b>
+        ₹${amount}
+      </p>
 
 
-    <div class="input-group">
-
-      <label>
-        Password
-      </label>
-
-      <input
-        id="adminPass"
-        type="password"
-        placeholder="Admin password"
-      >
-
-    </div>
+      <p>
+        <b>Delivery:</b>
+        ₹${delivery}
+      </p>
 
 
-    <button
-      class="place-order-btn"
-      onclick="adminLogin()"
-    >
+      <p class="order-total">
+        Total:
+        ₹${total}
+      </p>
 
-      Login
 
-      <span>
-        →
+      <p>
+        <b>Address:</b>
+        ${address}
+      </p>
+
+
+      ${
+        created
+          ? `
+            <p>
+              <b>Order Time:</b>
+              ${escapeHtml(created)}
+            </p>
+          `
+          : ""
+      }
+
+
+      <span class="status-badge">
+        ${status}
       </span>
 
-    </button>
 
-
-    <p
-      id="loginError"
-      class="error-text"
-    ></p>
-
-  </div>
-
-
-  <!-- ADMIN CONTENT -->
-
-  <div
-    id="adminContent"
-    class="hidden"
-  >
-
-
-    <!-- ADMIN TOP -->
-
-    <div class="admin-content-header">
-
-      <div>
-
-        <span class="mini-label">
-          DASHBOARD
-        </span>
-
-        <h3>
-          Order Management
-        </h3>
-
-      </div>
-
-      <button
-        class="logout-btn"
-        onclick="adminLogout()"
+      <select
+        onchange="
+          changeStatus(
+            '${escapeHtml(order.id)}',
+            this.value
+          )
+        "
       >
-        Logout
-      </button>
 
-    </div>
+        ${
+          statuses.map(
+            item => `
 
+              <option
+                value="${escapeHtml(item)}"
+                ${
+                  order.status === item
+                    ? "selected"
+                    : ""
+                }
+              >
+                ${escapeHtml(item)}
+              </option>
 
-    <!-- STATS -->
-
-    <div class="admin-stats">
-
-      <div class="stat-card">
-
-        <strong id="totalOrders">
-          0
-        </strong>
-
-        <span>
-          Total Orders
-        </span>
-
-      </div>
-
-
-      <div class="stat-card">
-
-        <strong id="receivedOrders">
-          0
-        </strong>
-
-        <span>
-          Received
-        </span>
-
-      </div>
-
-
-      <div class="stat-card">
-
-        <strong id="pickedUpOrders">
-          0
-        </strong>
-
-        <span>
-          Picked Up
-        </span>
-
-      </div>
-
-
-      <div class="stat-card">
-
-        <strong id="cleaningOrders">
-          0
-        </strong>
-
-        <span>
-          Cleaning
-        </span>
-
-      </div>
-
-
-      <div class="stat-card">
-
-        <strong id="readyOrders">
-          0
-        </strong>
-
-        <span>
-          Ready
-        </span>
-
-      </div>
-
-
-      <div class="stat-card">
-
-        <strong id="deliveredOrders">
-          0
-        </strong>
-
-        <span>
-          Delivered
-        </span>
-
-      </div>
-
-
-      <div class="stat-card">
-
-        <strong id="notReadyOrders">
-          0
-        </strong>
-
-        <span>
-          Not Ready
-        </span>
-
-      </div>
-
-    </div>
-
-
-    <!-- FILTER -->
-
-    <div class="admin-toolbar">
-
-      <select id="adminFilter">
-
-        <option value="All">
-          All Orders
-        </option>
-
-        <option value="Received">
-          Received
-        </option>
-
-        <option value="Picked Up">
-          Picked Up
-        </option>
-
-        <option value="Cleaning">
-          Cleaning
-        </option>
-
-        <option value="Ready">
-          Ready
-        </option>
-
-        <option value="Delivered">
-          Delivered
-        </option>
-
-        <option value="Not Ready">
-          Not Ready
-        </option>
+            `
+          ).join("")
+        }
 
       </select>
 
 
-      <button
-        onclick="loadAdminOrders()"
-      >
-        🔄 Refresh
-      </button>
+      <div class="order-actions">
+
+        <button
+          class="call-btn"
+          onclick="
+            callCustomer(
+              '${escapeHtml(order.mobile || "")}'
+            )
+          "
+        >
+          📞 Call
+        </button>
+
+
+        <button
+          class="whatsapp-btn"
+          onclick="
+            whatsappCustomer(
+              '${escapeHtml(order.mobile || "")}',
+              '${escapeHtml(order.id)}'
+            )
+          "
+        >
+          WhatsApp
+        </button>
+
+      </div>
 
     </div>
 
+  `;
 
-    <!-- SEARCH -->
-
-    <div class="admin-search">
-
-      <input
-        id="adminSearch"
-        type="search"
-        placeholder="Search order, name or mobile..."
-        oninput="renderAdminOrders()"
-      >
-
-    </div>
+}
 
 
-    <!-- ORDERS -->
+/* =========================
+   CHANGE STATUS
+========================= */
 
-    <div id="ordersList"></div>
+async function changeStatus(id, status) {
 
-  </div>
+  try {
 
-</section>
+    const response = await fetch(
+      API +
+      "/admin/orders/" +
+      encodeURIComponent(id),
+      {
+        method: "PATCH",
 
-</main>
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
 
-
-<!-- ================= FOOTER ================= -->
-
-<footer>
-
-  <div class="footer-logo">
-    Laundry Desire Hub
-  </div>
-
-  <p>
-    Professional Laundry & Dry Cleaning
-  </p>
-
-  <span>
-    Pickup & Delivery • 2–3 Days
-  </span>
-
-</footer>
+        body: JSON.stringify({
+          status
+        })
+      }
+    );
 
 
-<script src="/app.js"></script>
+    const data =
+      await response.json();
 
-</body>
-</html>
+
+    if (!response.ok) {
+
+      throw new Error(
+        data.error ||
+        "Unable to update order."
+      );
+
+    }
+
+
+    /* Update local screen immediately */
+
+    const order =
+      allAdminOrders.find(
+        item => String(item.id) === String(id)
+      );
+
+
+    if (order) {
+      order.status = status;
+    }
+
+
+    updateAdminStats(
+      allAdminOrders
+    );
+
+
+    renderAdminOrders();
+
+
+  } catch (error) {
+
+    alert(
+      error.message ||
+      "Status update failed."
+    );
+
+  }
+
+}
+
+
+/* =========================
+   CALL CUSTOMER
+========================= */
+
+function callCustomer(phone) {
+
+  if (!phone) {
+
+    alert(
+      "Mobile number available nahi hai."
+    );
+
+    return;
+  }
+
+
+  window.location.href =
+    "tel:" + phone;
+
+}
+
+
+/* =========================
+   WHATSAPP CUSTOMER
+========================= */
+
+function whatsappCustomer(
+  phone,
+  orderId
+) {
+
+  if (!phone) {
+
+    alert(
+      "Mobile number available nahi hai."
+    );
+
+    return;
+  }
+
+
+  const cleanPhone =
+    String(phone)
+      .replace(/\D/g, "");
+
+
+  const message =
+    `Hello, Laundry Desire Hub se aapke Order ${orderId} ka update hai.`;
+
+
+  let whatsappNumber =
+    cleanPhone;
+
+
+  if (whatsappNumber.length === 10) {
+
+    whatsappNumber =
+      "91" + whatsappNumber;
+
+  }
+
+
+  window.open(
+    "https://wa.me/" +
+    whatsappNumber +
+    "?text=" +
+    encodeURIComponent(message),
+    "_blank"
+  );
+
+}
+
+
+/* =========================
+   FILTER CHANGE
+========================= */
+
+const adminFilter =
+  document.getElementById(
+    "adminFilter"
+  );
+
+
+if (adminFilter) {
+
+  adminFilter.addEventListener(
+    "change",
+    renderAdminOrders
+  );
+
+}
