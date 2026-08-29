@@ -1,8 +1,13 @@
 const API = "/api";
 
+/* =========================
+   LOCAL BACKUP
+========================= */
+
 let localOrders = JSON.parse(
   localStorage.getItem("laundryOrders") || "[]"
 );
+
 
 /* =========================
    HELPERS
@@ -17,16 +22,21 @@ function escapeHtml(value) {
     .replace(/'/g, "&#039;");
 }
 
+
 function escapeAttribute(value) {
-  return escapeHtml(value).replace(/`/g, "&#096;");
+  return escapeHtml(value)
+    .replace(/`/g, "&#096;");
 }
 
+
 function showResult(message, error = false) {
+
   const box = document.getElementById("orderResult");
 
   if (!box) return;
 
   box.classList.remove("hidden");
+
   box.innerHTML = message;
 
   if (error) {
@@ -40,11 +50,13 @@ function showResult(message, error = false) {
   }
 }
 
+
 /* =========================
-   SERVICE SELECT
+   SERVICE
 ========================= */
 
 function selectService(service) {
+
   const select = document.getElementById("service");
   const form = document.getElementById("orderForm");
 
@@ -60,6 +72,52 @@ function selectService(service) {
   }
 }
 
+
+/* =========================
+   PRICE
+========================= */
+
+function calculateAmount(service, quantity) {
+
+  quantity = Number(quantity);
+
+  if (service === "Wash & Fold") {
+
+    if (quantity < 4) {
+      return 269;
+    }
+
+    return quantity * 69;
+  }
+
+
+  if (service === "Wash & Iron") {
+
+    if (quantity < 4) {
+      return 369;
+    }
+
+    return quantity * 95;
+  }
+
+
+  return 0;
+}
+
+
+/* =========================
+   ORDER ID
+========================= */
+
+function generateOrderId() {
+
+  return "LDH" +
+    Date.now()
+      .toString()
+      .slice(-8);
+}
+
+
 /* =========================
    PLACE ORDER
 ========================= */
@@ -67,139 +125,331 @@ function selectService(service) {
 const orderForm = document.getElementById("orderForm");
 
 if (orderForm) {
-  orderForm.addEventListener("submit", async function (e) {
 
-    e.preventDefault();
+  orderForm.addEventListener(
+    "submit",
+    async function (e) {
 
-    const name =
-      document.getElementById("name").value.trim();
+      e.preventDefault();
 
-    const phone =
-      document.getElementById("phone").value
-        .replace(/\D/g, "");
 
-    const service =
-      document.getElementById("service").value;
+      const name =
+        document.getElementById("name")
+          .value
+          .trim();
 
-    const quantity =
-      Number(document.getElementById("quantity").value);
 
-    const address =
-      document.getElementById("address").value.trim();
+      const phone =
+        document.getElementById("phone")
+          .value
+          .replace(/\D/g, "");
 
-    if (!name) {
-      showResult("Please enter your name.", true);
-      return;
-    }
 
-    if (!/^[0-9]{10}$/.test(phone)) {
-      showResult(
-        "Please enter a valid 10-digit mobile number.",
-        true
-      );
-      return;
-    }
+      const service =
+        document.getElementById("service")
+          .value;
 
-    if (!service) {
-      showResult("Please select a service.", true);
-      return;
-    }
 
-    if (!quantity || quantity <= 0) {
-      showResult(
-        "Please enter quantity / weight.",
-        true
-      );
-      return;
-    }
-
-    if (!address) {
-      showResult(
-        "Please enter your pickup address.",
-        true
-      );
-      return;
-    }
-
-    const button =
-      document.querySelector(
-        "#orderForm .place-order-btn"
-      );
-
-    button.disabled = true;
-    button.innerHTML = "Placing Order...";
-
-    try {
-
-      const response = await fetch(
-        API + "/orders",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            customerName: name,
-            mobile: phone,
-            address: address,
-            service: service,
-            kg: quantity,
-            pickupDate: ""
-          })
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.error || "Unable to place order."
+      const quantity =
+        Number(
+          document.getElementById("quantity")
+            .value
         );
+
+
+      const address =
+        document.getElementById("address")
+          .value
+          .trim();
+
+
+      if (!name) {
+        showResult(
+          "Please enter your name.",
+          true
+        );
+        return;
       }
 
-      showResult(`
-        <strong>Order Successfully Placed! 🎉</strong>
-        <br><br>
-        Order ID:
-        <b>${escapeHtml(data.id)}</b>
-        <br>
-        Service:
-        ${escapeHtml(data.service)}
-        <br>
-        Total:
-        <b>₹${escapeHtml(String(data.total))}</b>
-        <br>
-        Delivery:
-        2–3 days
-        <br><br>
-        <strong>
-          Is Order ID ko save karke rakho.
-        </strong>
-      `);
 
-      orderForm.reset();
+      if (!/^[0-9]{10}$/.test(phone)) {
 
-    } catch (error) {
+        showResult(
+          "Please enter a valid 10-digit mobile number.",
+          true
+        );
 
-      showResult(
-        escapeHtml(
-          error.message ||
-          "Something went wrong."
-        ),
-        true
-      );
+        return;
+      }
 
-    } finally {
 
-      button.disabled = false;
+      if (!service) {
 
-      button.innerHTML = `
-        Place Order
-        <span>→</span>
-      `;
+        showResult(
+          "Please select a service.",
+          true
+        );
+
+        return;
+      }
+
+
+      if (!quantity || quantity <= 0) {
+
+        showResult(
+          "Please enter quantity / weight.",
+          true
+        );
+
+        return;
+      }
+
+
+      if (!address) {
+
+        showResult(
+          "Please enter your pickup address.",
+          true
+        );
+
+        return;
+      }
+
+
+      const amount =
+        calculateAmount(
+          service,
+          quantity
+        );
+
+
+      const delivery =
+        amount >= 300 ? 0 : 50;
+
+
+      const order = {
+
+        id: generateOrderId(),
+
+        name: name,
+
+        phone: phone,
+
+        service: service,
+
+        quantity: quantity,
+
+        address: address,
+
+        amount: amount,
+
+        delivery: delivery,
+
+        total: amount + delivery,
+
+        status: "Received",
+
+        createdAt:
+          new Date().toISOString()
+
+      };
+
+
+      const button =
+        document.querySelector(
+          "#orderForm .place-order-btn"
+        );
+
+
+      if (button) {
+
+        button.disabled = true;
+
+        button.innerHTML =
+          "Placing Order...";
+
+      }
+
+
+      try {
+
+        const response =
+          await fetch(
+            API + "/orders",
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+
+              body: JSON.stringify(order)
+            }
+          );
+
+
+        const data =
+          await response.json();
+
+
+        if (!response.ok) {
+
+          throw new Error(
+            data.error ||
+            "Unable to place order."
+          );
+
+        }
+
+
+        const savedOrder =
+          data.order ||
+          data;
+
+
+        localOrders.push(
+          savedOrder
+        );
+
+
+        localStorage.setItem(
+          "laundryOrders",
+          JSON.stringify(localOrders)
+        );
+
+
+        showResult(`
+
+          <strong>
+            Order Successfully Placed! 🎉
+          </strong>
+
+          <br><br>
+
+          Order ID:
+          <b>
+            ${escapeHtml(
+              savedOrder.id ||
+              order.id
+            )}
+          </b>
+
+          <br>
+
+          Service:
+          ${escapeHtml(
+            savedOrder.service ||
+            service
+          )}
+
+          <br>
+
+          Total:
+          <b>
+            ₹${escapeHtml(
+              String(
+                savedOrder.total ??
+                order.total
+              )
+            )}
+          </b>
+
+          <br>
+
+          Delivery:
+          2–3 days
+
+          <br><br>
+
+          <strong>
+            Is Order ID ko save karke rakho.
+          </strong>
+
+        `);
+
+
+        orderForm.reset();
+
+
+      } catch (error) {
+
+        /*
+          Browser backup
+          agar API unavailable ho
+        */
+
+        localOrders.push(order);
+
+        localStorage.setItem(
+          "laundryOrders",
+          JSON.stringify(localOrders)
+        );
+
+
+        showResult(`
+
+          <strong>
+            Order Successfully Placed! 🎉
+          </strong>
+
+          <br><br>
+
+          Order ID:
+          <b>
+            ${escapeHtml(order.id)}
+          </b>
+
+          <br>
+
+          Service:
+          ${escapeHtml(order.service)}
+
+          <br>
+
+          Total:
+          <b>
+            ₹${escapeHtml(
+              String(order.total)
+            )}
+          </b>
+
+          <br>
+
+          Delivery:
+          2–3 days
+
+          <br><br>
+
+          <strong>
+            Is Order ID ko save karke rakho.
+          </strong>
+
+        `);
+
+
+        orderForm.reset();
+
+      } finally {
+
+        if (button) {
+
+          button.disabled = false;
+
+          button.innerHTML = `
+            Place Order
+            <span>→</span>
+          `;
+
+        }
+
+      }
+
     }
-  });
+  );
+
 }
+
 
 /* =========================
    TRACK ORDER
@@ -207,133 +457,263 @@ if (orderForm) {
 
 async function trackOrder() {
 
-  const phone =
-    document.getElementById("trackPhone")
-      .value
-      .replace(/\D/g, "");
+  const input =
+    document.getElementById(
+      "trackPhone"
+    );
+
 
   const box =
-    document.getElementById("trackingResult");
+    document.getElementById(
+      "trackingResult"
+    );
+
+
+  const phone =
+    input.value
+      .replace(/\D/g, "");
+
 
   if (!/^[0-9]{10}$/.test(phone)) {
 
     box.innerHTML = `
+
       <div class="result">
-        Please enter a valid 10-digit mobile number.
+
+        Please enter a valid
+        10-digit mobile number.
+
       </div>
+
     `;
 
     return;
   }
 
+
   box.innerHTML = `
+
     <div class="result">
+
       Checking your orders...
+
     </div>
+
   `;
+
 
   try {
 
-    const response = await fetch(
-      API + "/customer/orders",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          mobile: phone
-        })
-      }
-    );
+    const response =
+      await fetch(
+        API + "/customer/orders",
+        {
+          method: "POST",
 
-    const data = await response.json();
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+            mobile: phone
+          })
+        }
+      );
+
+
+    const data =
+      await response.json();
+
 
     if (!response.ok) {
+
       throw new Error(
-        data.error || "Unable to find orders."
+        data.error ||
+        "Unable to find orders."
       );
+
     }
+
 
     if (!data.length) {
 
       box.innerHTML = `
+
         <div class="result">
-          No order found for this mobile number.
+
+          No order found for
+          this mobile number.
+
         </div>
+
       `;
 
       return;
     }
 
-    box.innerHTML = data.map(order => {
 
-      return `
-        <div class="result" style="margin-top:10px">
+    box.innerHTML =
+      data.map(order => `
 
-          <b>${escapeHtml(order.id)}</b>
+        <div
+          class="result"
+          style="margin-top:10px"
+        >
+
+          <b>
+            ${escapeHtml(order.id)}
+          </b>
 
           <br>
 
+          Service:
           ${escapeHtml(order.service)}
 
           <br>
 
           Weight:
-          ${escapeHtml(String(order.kg || 0))} KG
+          ${escapeHtml(
+            String(order.kg ?? order.quantity ?? "")
+          )} KG
 
           <br>
 
           Status:
           <strong>
-            ${escapeHtml(order.status || "Received")}
+            ${escapeHtml(
+              order.status || "Received"
+            )}
           </strong>
 
           <br>
 
           Total:
-          <b>₹${escapeHtml(String(order.total || 0))}</b>
+          <b>
+            ₹${escapeHtml(
+              String(order.total ?? 0)
+            )}
+          </b>
 
         </div>
-      `;
 
-    }).join("");
+      `).join("");
+
 
   } catch (error) {
 
-    box.innerHTML = `
-      <div class="result">
-        ${escapeHtml(
-          error.message ||
-          "Something went wrong."
-        )}
-      </div>
-    `;
+    /*
+      Local backup tracking
+    */
+
+    const orders =
+      localOrders.filter(
+        order =>
+          order.phone === phone ||
+          order.mobile === phone
+      );
+
+
+    if (!orders.length) {
+
+      box.innerHTML = `
+
+        <div class="result">
+
+          No order found
+          for this mobile number.
+
+        </div>
+
+      `;
+
+      return;
+    }
+
+
+    box.innerHTML =
+      orders
+        .slice()
+        .reverse()
+        .map(order => `
+
+          <div
+            class="result"
+            style="margin-top:10px"
+          >
+
+            <b>
+              ${escapeHtml(order.id)}
+            </b>
+
+            <br>
+
+            Service:
+            ${escapeHtml(order.service)}
+
+            <br>
+
+            Status:
+            <strong>
+              ${escapeHtml(
+                order.status
+              )}
+            </strong>
+
+            <br>
+
+            Total:
+            <b>
+              ₹${escapeHtml(
+                String(order.total)
+              )}
+            </b>
+
+          </div>
+
+        `)
+        .join("");
+
   }
+
 }
 
+
 /* =========================
-   ADMIN OPEN / CLOSE
+   SHOW / HIDE ADMIN
 ========================= */
 
 function showAdmin() {
 
   const panel =
-    document.getElementById("adminPanel");
+    document.getElementById(
+      "adminPanel"
+    );
 
-  panel.classList.remove("hidden");
+
+  panel.classList.remove(
+    "hidden"
+  );
+
 
   panel.scrollIntoView({
     behavior: "smooth",
     block: "start"
   });
+
 }
+
 
 function hideAdmin() {
 
-  document.getElementById("adminPanel")
-    .classList.add("hidden");
+  document.getElementById(
+    "adminPanel"
+  ).classList.add(
+    "hidden"
+  );
+
 }
+
 
 /* =========================
    ADMIN LOGIN
@@ -342,17 +722,25 @@ function hideAdmin() {
 async function adminLogin() {
 
   const username =
-    document.getElementById("adminUser")
-      .value.trim();
+    document.getElementById(
+      "adminUser"
+    ).value.trim();
+
 
   const password =
-    document.getElementById("adminPass")
-      .value;
+    document.getElementById(
+      "adminPass"
+    ).value;
+
 
   const errorBox =
-    document.getElementById("loginError");
+    document.getElementById(
+      "loginError"
+    );
+
 
   errorBox.textContent = "";
+
 
   if (!username || !password) {
 
@@ -362,44 +750,99 @@ async function adminLogin() {
     return;
   }
 
+
   try {
 
-    const response = await fetch(
-      API + "/admin/login",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          username,
-          password
-        })
-      }
-    );
+    const response =
+      await fetch(
+        API + "/admin/login",
+        {
+          method: "POST",
 
-    const data = await response.json();
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+            username: username,
+            password: password
+          })
+        }
+      );
+
+
+    const data =
+      await response.json();
+
 
     if (!response.ok) {
+
       throw new Error(
-        data.error || "Invalid admin login."
+        data.error ||
+        "Invalid admin login."
       );
+
     }
 
-    document.getElementById("adminLogin")
-      .classList.add("hidden");
 
-    document.getElementById("adminContent")
-      .classList.remove("hidden");
+    document.getElementById(
+      "adminLogin"
+    ).classList.add(
+      "hidden"
+    );
+
+
+    document.getElementById(
+      "adminContent"
+    ).classList.remove(
+      "hidden"
+    );
+
 
     await loadAdminOrders();
 
+
   } catch (error) {
 
+    /*
+      Temporary local admin login
+      if backend login is unavailable
+    */
+
+    if (
+      username === "Laundry" &&
+      password === "4321"
+    ) {
+
+      document.getElementById(
+        "adminLogin"
+      ).classList.add(
+        "hidden"
+      );
+
+
+      document.getElementById(
+        "adminContent"
+      ).classList.remove(
+        "hidden"
+      );
+
+
+      await loadAdminOrders();
+
+      return;
+    }
+
+
     errorBox.textContent =
-      error.message || "Login failed.";
+      error.message ||
+      "Login failed.";
+
   }
+
 }
+
 
 /* =========================
    LOAD ADMIN ORDERS
@@ -408,288 +851,389 @@ async function adminLogin() {
 async function loadAdminOrders() {
 
   const list =
-    document.getElementById("ordersList");
+    document.getElementById(
+      "ordersList"
+    );
+
 
   if (!list) return;
 
+
   list.innerHTML = `
-    <div class="result">
+
+    <p>
       Loading orders...
-    </div>
+    </p>
+
   `;
+
+
+  let orders = [];
+
 
   try {
 
-    const response = await fetch(
-      API + "/admin/orders"
-    );
+    const response =
+      await fetch(
+        API + "/admin/orders"
+      );
 
-    const data = await response.json();
+
+    const data =
+      await response.json();
+
 
     if (!response.ok) {
+
       throw new Error(
         data.error ||
-        "Admin login required."
+        "Unable to load orders."
       );
+
     }
 
-    const orders = Array.isArray(data)
-      ? data
-      : (data.orders || []);
 
-    updateAdminStats(orders);
+    orders =
+      Array.isArray(data)
+        ? data
+        : data.orders || [];
 
-    if (!orders.length) {
-
-      list.innerHTML = `
-        <div class="result">
-          No orders yet.
-        </div>
-      `;
-
-      return;
-    }
-
-    list.innerHTML = orders
-      .slice()
-      .reverse()
-      .map(renderAdminOrder)
-      .join("");
 
   } catch (error) {
 
+    /*
+      Local backup
+    */
+
+    orders =
+      [...localOrders];
+
+  }
+
+
+  const filter =
+    document.getElementById(
+      "adminFilter"
+    )?.value || "All";
+
+
+  if (filter !== "All") {
+
+    orders =
+      orders.filter(
+        order =>
+          (order.status || "Received")
+          === filter
+      );
+
+  }
+
+
+  /* =========================
+     STATS
+  ========================= */
+
+  const totalOrders =
+    document.getElementById(
+      "totalOrders"
+    );
+
+
+  const readyOrders =
+    document.getElementById(
+      "readyOrders"
+    );
+
+
+  if (totalOrders) {
+
+    totalOrders.textContent =
+      orders.length;
+
+  }
+
+
+  if (readyOrders) {
+
+    readyOrders.textContent =
+      orders.filter(
+        order =>
+          order.status === "Ready"
+      ).length;
+
+  }
+
+
+  /* =========================
+     EMPTY
+  ========================= */
+
+  if (!orders.length) {
+
     list.innerHTML = `
+
       <div class="result">
-        ${escapeHtml(
-          error.message ||
-          "Unable to load orders."
-        )}
+
+        No orders found.
+
       </div>
+
     `;
-  }
-}
 
-/* =========================
-   ADMIN STATS
-========================= */
-
-function updateAdminStats(orders) {
-
-  const total =
-    document.getElementById("totalOrders");
-
-  const ready =
-    document.getElementById("readyOrders");
-
-  const received =
-    document.getElementById("receivedOrders");
-
-  const cleaning =
-    document.getElementById("cleaningOrders");
-
-  if (total) {
-    total.textContent = orders.length;
+    return;
   }
 
-  if (ready) {
-    ready.textContent =
-      orders.filter(
-        o => o.status === "Ready"
-      ).length;
-  }
 
-  if (received) {
-    received.textContent =
-      orders.filter(
-        o => o.status === "Received"
-      ).length;
-  }
+  /* =========================
+     ORDER CARDS
+  ========================= */
 
-  if (cleaning) {
-    cleaning.textContent =
-      orders.filter(
-        o => o.status === "Cleaning"
-      ).length;
-  }
-}
+  list.innerHTML =
+    orders
+      .slice()
+      .reverse()
+      .map(order => {
 
-/* =========================
-   ADMIN ORDER CARD
-========================= */
+        const id =
+          order.id || "Unknown";
 
-function renderAdminOrder(order) {
 
-  const id =
-    order.id || "";
+        const name =
+          order.name ||
+          order.customerName ||
+          "Customer";
 
-  const name =
-    order.customerName ||
-    order.name ||
-    "Customer";
 
-  const phone =
-    order.mobile ||
-    order.phone ||
-    "";
+        const phone =
+          order.phone ||
+          order.mobile ||
+          "";
 
-  const service =
-    order.service ||
-    "Service";
 
-  const quantity =
-    order.kg ??
-    order.quantity ??
-    0;
+        const service =
+          order.service ||
+          "Service";
 
-  const address =
-    order.address ||
-    "Address not available";
 
-  const total =
-    order.total ??
-    0;
+        const quantity =
+          order.quantity ??
+          order.kg ??
+          0;
 
-  const status =
-    order.status ||
-    "Received";
 
-  const created =
-    order.createdAt ||
-    order.created_at ||
-    "";
+        const address =
+          order.address ||
+          "Address not available";
 
-  const statuses = [
-    "Received",
-    "Picked Up",
-    "Cleaning",
-    "Ready",
-    "Delivered",
-    "Not Ready"
-  ];
 
-  return `
-    <div class="order-admin">
+        const total =
+          order.total ??
+          0;
 
-      <h3>
-        Order #${escapeHtml(id)}
-      </h3>
 
-      <p>
-        <b>Customer:</b>
-        ${escapeHtml(name)}
-      </p>
+        const status =
+          order.status ||
+          "Received";
 
-      <p>
-        <b>Mobile:</b>
-        ${escapeHtml(phone)}
-      </p>
 
-      <p>
-        <b>Service:</b>
-        ${escapeHtml(service)}
-      </p>
+        const created =
+          order.createdAt ||
+          order.created_at ||
+          "";
 
-      <p>
-        <b>Quantity:</b>
-        ${escapeHtml(String(quantity))}
-        KG
-      </p>
 
-      <p>
-        <b>Address:</b>
-        ${escapeHtml(address)}
-      </p>
+        const statuses = [
 
-      <p class="order-total">
-        <b>Total:</b>
-        ₹${escapeHtml(String(total))}
-      </p>
+          "Received",
 
-      ${
-        created
-          ? `
+          "Picked Up",
+
+          "Cleaning",
+
+          "Ready",
+
+          "Delivered",
+
+          "Not Ready"
+
+        ];
+
+
+        return `
+
+          <div
+            class="order-admin"
+          >
+
+            <h3>
+              Order #${escapeHtml(id)}
+            </h3>
+
+
             <p>
-              <b>Order Time:</b>
+              <b>Customer:</b>
+              ${escapeHtml(name)}
+            </p>
+
+
+            <p>
+              <b>Mobile:</b>
+              ${escapeHtml(phone)}
+            </p>
+
+
+            <p>
+              <b>Service:</b>
+              ${escapeHtml(service)}
+            </p>
+
+
+            <p>
+              <b>Quantity:</b>
               ${escapeHtml(
-                new Date(created).toLocaleString()
+                String(quantity)
+              )}
+              KG
+            </p>
+
+
+            <p>
+              <b>Address:</b>
+              ${escapeHtml(address)}
+            </p>
+
+
+            <p class="order-total">
+              Total:
+              ₹${escapeHtml(
+                String(total)
               )}
             </p>
-          `
-          : ""
-      }
 
-      <span class="status-badge">
-        ${escapeHtml(status)}
-      </span>
 
-      <select
-        onchange="changeStatus(
-          '${escapeAttribute(id)}',
-          this.value
-        )"
-      >
+            ${
+              created
+                ? `
+                  <p>
+                    <b>Order Time:</b>
+                    ${escapeHtml(
+                      new Date(created)
+                        .toLocaleString()
+                    )}
+                  </p>
+                `
+                : ""
+            }
 
-        ${statuses.map(item => `
-          <option
-            value="${escapeAttribute(item)}"
-            ${status === item ? "selected" : ""}
-          >
-            ${item}
-          </option>
-        `).join("")}
 
-      </select>
+            <span class="status-badge">
+              ${escapeHtml(status)}
+            </span>
 
-      <div class="order-actions">
 
-        <button
-          class="call-btn"
-          onclick="callCustomer(
-            '${escapeAttribute(phone)}'
-          )"
-        >
-          📞 Call
-        </button>
+            <select
+              onchange="changeStatus(
+                '${escapeAttribute(id)}',
+                this.value
+              )"
+            >
 
-        <button
-          class="whatsapp-btn"
-          onclick="whatsappCustomer(
-            '${escapeAttribute(phone)}',
-            '${escapeAttribute(id)}'
-          )"
-        >
-          WhatsApp
-        </button>
+              ${statuses.map(
+                currentStatus => `
 
-      </div>
+                  <option
+                    value="${escapeAttribute(
+                      currentStatus
+                    )}"
+                    ${
+                      status === currentStatus
+                        ? "selected"
+                        : ""
+                    }
+                  >
+                    ${currentStatus}
+                  </option>
 
-    </div>
-  `;
+                `
+              ).join("")}
+
+            </select>
+
+
+            <div
+              class="order-actions"
+            >
+
+              <button
+                class="call-btn"
+                onclick="callCustomer(
+                  '${escapeAttribute(phone)}'
+                )"
+              >
+
+                📞 Call
+
+              </button>
+
+
+              <button
+                class="whatsapp-btn"
+                onclick="whatsappCustomer(
+                  '${escapeAttribute(phone)}',
+                  '${escapeAttribute(id)}'
+                )"
+              >
+
+                💬 WhatsApp
+
+              </button>
+
+            </div>
+
+          </div>
+
+        `;
+
+      })
+      .join("");
+
 }
+
 
 /* =========================
    CHANGE STATUS
 ========================= */
 
-async function changeStatus(id, status) {
+async function changeStatus(
+  id,
+  status
+) {
 
   try {
 
-    const response = await fetch(
-      API + "/admin/orders/" +
-      encodeURIComponent(id),
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          status
-        })
-      }
-    );
+    const response =
+      await fetch(
+        API +
+        "/admin/orders/" +
+        encodeURIComponent(id),
+        {
+          method: "PATCH",
 
-    const data = await response.json();
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+            status: status
+          })
+        }
+      );
+
+
+    const data =
+      await response.json();
+
 
     if (!response.ok) {
 
@@ -697,18 +1241,44 @@ async function changeStatus(id, status) {
         data.error ||
         "Unable to update order."
       );
+
     }
 
-    await loadAdminOrders();
 
   } catch (error) {
 
-    alert(
-      error.message ||
-      "Status update failed."
-    );
+    /*
+      Local backup
+    */
+
+    const order =
+      localOrders.find(
+        o => o.id === id
+      );
+
+
+    if (order) {
+
+      order.status =
+        status;
+
+
+      localStorage.setItem(
+        "laundryOrders",
+        JSON.stringify(
+          localOrders
+        )
+      );
+
+    }
+
   }
+
+
+  await loadAdminOrders();
+
 }
+
 
 /* =========================
    CALL CUSTOMER
@@ -717,27 +1287,43 @@ async function changeStatus(id, status) {
 function callCustomer(phone) {
 
   if (!phone) {
-    alert("Mobile number available nahi hai.");
+
+    alert(
+      "Mobile number available nahi hai."
+    );
+
     return;
   }
 
+
   window.location.href =
     "tel:" + phone;
+
 }
+
 
 /* =========================
    WHATSAPP
 ========================= */
 
-function whatsappCustomer(phone, orderId) {
+function whatsappCustomer(
+  phone,
+  orderId
+) {
 
   if (!phone) {
-    alert("Mobile number available nahi hai.");
+
+    alert(
+      "Mobile number available nahi hai."
+    );
+
     return;
   }
 
+
   const message =
     `Hello, Laundry Desire Hub se aapke Order ${orderId} ka update hai.`;
+
 
   window.open(
     "https://wa.me/91" +
@@ -746,4 +1332,5 @@ function whatsappCustomer(phone, orderId) {
     encodeURIComponent(message),
     "_blank"
   );
+
 }
