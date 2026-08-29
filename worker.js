@@ -1,329 +1,698 @@
-const API = "/api";
+export default {
+  async fetch(request, env) {
 
-function selectService(service) {
-  document.getElementById("service").value = service;
-  document.getElementById("orderForm").scrollIntoView({
-    behavior: "smooth"
-  });
-}
+    const url = new URL(request.url);
+    const path = url.pathname;
 
-document.getElementById("orderForm").addEventListener("submit", async function(e) {
-  e.preventDefault();
+    /*
+    ========================================
+    CORS
+    ========================================
+    */
 
-  const name = document.getElementById("name").value.trim();
-  const phone = document.getElementById("phone").value.trim();
-  const service = document.getElementById("service").value;
-  const quantity = Number(document.getElementById("quantity").value);
-  const address = document.getElementById("address").value.trim();
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type"
+    };
 
-  if (!/^[0-9]{10}$/.test(phone)) {
-    alert("10 digit mobile number dalo.");
-    return;
-  }
-
-  try {
-    const response = await fetch(API + "/orders", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        customerName: name,
-        mobile: phone,
-        service: service,
-        kg: quantity,
-        address: address
-      })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      alert(data.error || "Order place nahi hua.");
-      return;
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders
+      });
     }
 
-    document.getElementById("orderResult").classList.remove("hidden");
 
-    document.getElementById("orderResult").innerHTML = `
-      <strong>🎉 Order Successfully Placed!</strong>
-      <br><br>
-      Order ID: <b>${data.id}</b>
-      <br>
-      Total: <b>₹${data.total}</b>
-      <br>
-      Delivery: 2–3 days
-      <br><br>
-      Order ID save karke rakho.
-    `;
+    /*
+    ========================================
+    JSON RESPONSE HELPER
+    ========================================
+    */
 
-    document.getElementById("orderForm").reset();
+    function json(data, status = 200) {
 
-  } catch (error) {
-    alert("Server se connection nahi ho raha.");
-  }
-});
+      return new Response(
+        JSON.stringify(data),
+        {
+          status,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        }
+      );
 
-
-async function trackOrder() {
-
-  const phone = document.getElementById("trackPhone").value.trim();
-  const box = document.getElementById("trackingResult");
-
-  if (!/^[0-9]{10}$/.test(phone)) {
-    box.innerHTML = `<div class="result">10 digit mobile number dalo.</div>`;
-    return;
-  }
-
-  try {
-
-    const response = await fetch(API + "/customer/orders", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        mobile: phone
-      })
-    });
-
-    const orders = await response.json();
-
-    if (!response.ok || !orders.length) {
-      box.innerHTML = `
-        <div class="result">
-          Koi order nahi mila.
-        </div>
-      `;
-      return;
     }
 
-    box.innerHTML = orders.map(order => `
-      <div class="result" style="margin-top:10px">
-        <b>${order.id}</b><br>
-        ${order.service}<br>
-        Quantity: ${order.kg} KG<br>
-        Total: ₹${order.total}<br>
-        Status: <strong>${order.status}</strong>
-      </div>
-    `).join("");
 
-  } catch {
-    box.innerHTML = `
-      <div class="result">
-        Server se connection nahi ho raha.
-      </div>
-    `;
-  }
-}
+    /*
+    ========================================
+    ADMIN LOGIN
+    ========================================
+    */
 
+    if (
+      path === "/api/admin/login" &&
+      request.method === "POST"
+    ) {
 
-function showAdmin() {
-  document.getElementById("adminPanel").classList.remove("hidden");
+      try {
 
-  document.getElementById("adminPanel").scrollIntoView({
-    behavior: "smooth"
-  });
-}
+        const body = await request.json();
 
+        const username =
+          String(body.username || "").trim();
 
-function hideAdmin() {
-  document.getElementById("adminPanel").classList.add("hidden");
-}
+        const password =
+          String(body.password || "");
 
+        if (!username || !password) {
 
-async function adminLogin() {
+          return json(
+            {
+              error: "Username and password required."
+            },
+            400
+          );
 
-  const username = document.getElementById("adminUser").value.trim();
-  const password = document.getElementById("adminPass").value;
-
-  const error = document.getElementById("loginError");
-
-  try {
-
-    const response = await fetch(API + "/admin/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      credentials: "include",
-      body: JSON.stringify({
-        username,
-        password
-      })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      error.textContent = data.error || "Login failed.";
-      return;
-    }
-
-    document.getElementById("adminLogin").classList.add("hidden");
-    document.getElementById("adminContent").classList.remove("hidden");
-
-    loadAdminOrders();
-
-  } catch {
-    error.textContent = "Server se connection nahi ho raha.";
-  }
-}
+        }
 
 
-async function loadAdminOrders() {
-
-  const list = document.getElementById("ordersList");
-
-  try {
-
-    const response = await fetch(API + "/admin/orders", {
-      method: "GET",
-      credentials: "include"
-    });
-
-    const orders = await response.json();
-
-    if (!response.ok) {
-      list.innerHTML = `<p>Admin login required.</p>`;
-      return;
-    }
-
-    document.getElementById("totalOrders").textContent =
-      orders.length;
-
-    document.getElementById("readyOrders").textContent =
-      orders.filter(o => o.status === "Ready").length;
-
-    if (!orders.length) {
-      list.innerHTML = "<p>Abhi koi order nahi hai.</p>";
-      return;
-    }
-
-    list.innerHTML = orders.map(order => `
-      <div class="order-admin">
-
-        <h3>${order.id}</h3>
-
-        <p>
-          <b>${escapeHTML(order.customerName)}</b>
-          • ${escapeHTML(order.mobile)}
-        </p>
-
-        <p>
-          ${escapeHTML(order.service)}
-          • ${order.kg} KG
-        </p>
-
-        <p>
-          Total: <b>₹${order.total}</b>
-        </p>
-
-        <p>
-          Address: ${escapeHTML(order.address)}
-        </p>
-
-        <p>
-          Status:
-          <strong>${escapeHTML(order.status)}</strong>
-        </p>
-
-        <select onchange="changeStatus('${order.id}', this.value)">
-          ${[
-            "Received",
-            "Picked Up",
-            "Cleaning",
-            "Ready",
-            "Delivered"
-          ].map(status => `
-            <option
-              value="${status}"
-              ${order.status === status ? "selected" : ""}
-            >
-              ${status}
-            </option>
-          `).join("")}
-        </select>
-
-        <input
-          style="margin-top:8px"
-          placeholder="Signature"
-          value="${escapeHTML(order.signature || "")}"
-          onchange="changeSignature('${order.id}', this.value)"
-        >
-
-      </div>
-    `).join("");
-
-  } catch {
-    list.innerHTML = `
-      <p>Orders load nahi ho rahe.</p>
-    `;
-  }
-}
+        const admin =
+          await env.DB.prepare(
+            `
+            SELECT id, username
+            FROM admins
+            WHERE username = ?
+            AND password = ?
+            LIMIT 1
+            `
+          )
+          .bind(username, password)
+          .first();
 
 
-async function changeStatus(id, status) {
+        if (!admin) {
 
-  try {
+          return json(
+            {
+              error: "Invalid admin login."
+            },
+            401
+          );
 
-    const response = await fetch(
-      API + "/admin/orders/" + encodeURIComponent(id),
-      {
-        method: "PATCH",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          status: status,
-          ready: status === "Ready"
-        })
+        }
+
+
+        return json({
+          success: true,
+          username: admin.username
+        });
+
+      } catch (error) {
+
+        return json(
+          {
+            error: error.message
+          },
+          500
+        );
+
       }
-    );
 
-    if (!response.ok) {
-      alert("Status update nahi hua.");
-      return;
     }
 
-    loadAdminOrders();
 
-  } catch {
-    alert("Server error.");
-  }
-}
+    /*
+    ========================================
+    PLACE ORDER
+    ========================================
+    */
+
+    if (
+      path === "/api/orders" &&
+      request.method === "POST"
+    ) {
+
+      try {
+
+        const body = await request.json();
 
 
-async function changeSignature(id, signature) {
+        const customerName =
+          String(
+            body.customerName ||
+            body.name ||
+            ""
+          ).trim();
 
-  try {
 
-    await fetch(
-      API + "/admin/orders/" + encodeURIComponent(id),
-      {
-        method: "PATCH",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          signature: signature
-        })
+        const mobile =
+          String(
+            body.mobile ||
+            body.phone ||
+            ""
+          )
+          .replace(/\D/g, "");
+
+
+        const address =
+          String(
+            body.address || ""
+          ).trim();
+
+
+        const service =
+          String(
+            body.service || ""
+          ).trim();
+
+
+        const kg =
+          Number(
+            body.kg ||
+            body.quantity ||
+            0
+          );
+
+
+        if (!customerName) {
+
+          return json(
+            {
+              error: "Customer name is required."
+            },
+            400
+          );
+
+        }
+
+
+        if (!/^[0-9]{10}$/.test(mobile)) {
+
+          return json(
+            {
+              error: "Valid 10 digit mobile number required."
+            },
+            400
+          );
+
+        }
+
+
+        if (!address) {
+
+          return json(
+            {
+              error: "Pickup address is required."
+            },
+            400
+          );
+
+        }
+
+
+        if (!service) {
+
+          return json(
+            {
+              error: "Service is required."
+            },
+            400
+          );
+
+        }
+
+
+        if (!kg || kg <= 0) {
+
+          return json(
+            {
+              error: "Quantity / weight is required."
+            },
+            400
+          );
+
+        }
+
+
+        /*
+        ========================================
+        PRICE CALCULATION
+        ========================================
+        */
+
+        let amount = 0;
+
+
+        if (service === "Wash & Fold") {
+
+          if (kg < 4) {
+            amount = 269;
+          } else {
+            amount = kg * 69;
+          }
+
+        }
+
+
+        else if (service === "Wash & Iron") {
+
+          if (kg < 4) {
+            amount = 369;
+          } else {
+            amount = kg * 95;
+          }
+
+        }
+
+
+        else if (service === "Dry Cleaning") {
+
+          amount = 0;
+
+        }
+
+
+        const delivery =
+          amount >= 300 ? 0 : 50;
+
+
+        const total =
+          amount + delivery;
+
+
+        /*
+        ========================================
+        ORDER ID
+        ========================================
+        */
+
+        const id =
+          "LDH" +
+          Date.now()
+            .toString()
+            .slice(-8);
+
+
+        const createdAt =
+          new Date().toISOString();
+
+
+        /*
+        ========================================
+        SAVE ORDER
+        ========================================
+        */
+
+        await env.DB.prepare(
+          `
+          INSERT INTO orders (
+            id,
+            customer_name,
+            mobile,
+            address,
+            service,
+            kg,
+            amount,
+            delivery,
+            total,
+            status,
+            created_at
+          )
+
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `
+        )
+        .bind(
+          id,
+          customerName,
+          mobile,
+          address,
+          service,
+          kg,
+          amount,
+          delivery,
+          total,
+          "Received",
+          createdAt
+        )
+        .run();
+
+
+        return json({
+
+          success: true,
+
+          id,
+
+          customerName,
+
+          mobile,
+
+          address,
+
+          service,
+
+          kg,
+
+          amount,
+
+          delivery,
+
+          total,
+
+          status: "Received",
+
+          createdAt
+
+        }, 201);
+
+
+      } catch (error) {
+
+        return json(
+          {
+            error:
+              error.message ||
+              "Unable to place order."
+          },
+          500
+        );
+
       }
-    );
 
-  } catch {
-    alert("Signature save nahi hua.");
+    }
+
+
+    /*
+    ========================================
+    CUSTOMER TRACKING
+    ========================================
+    */
+
+    if (
+      path === "/api/customer/orders" &&
+      request.method === "POST"
+    ) {
+
+      try {
+
+        const body =
+          await request.json();
+
+
+        const mobile =
+          String(
+            body.mobile || ""
+          )
+          .replace(/\D/g, "");
+
+
+        if (!/^[0-9]{10}$/.test(mobile)) {
+
+          return json(
+            {
+              error:
+                "Valid 10 digit mobile number required."
+            },
+            400
+          );
+
+        }
+
+
+        const result =
+          await env.DB.prepare(
+            `
+            SELECT
+              id,
+              service,
+              kg,
+              total,
+              status,
+              created_at
+            FROM orders
+            WHERE mobile = ?
+            ORDER BY created_at DESC
+            `
+          )
+          .bind(mobile)
+          .all();
+
+
+        const orders =
+          (result.results || [])
+          .map(order => ({
+
+            id: order.id,
+
+            service: order.service,
+
+            kg: order.kg,
+
+            total: order.total,
+
+            status: order.status,
+
+            createdAt: order.created_at
+
+          }));
+
+
+        return json(orders);
+
+
+      } catch (error) {
+
+        return json(
+          {
+            error: error.message
+          },
+          500
+        );
+
+      }
+
+    }
+
+
+    /*
+    ========================================
+    ADMIN — ALL ORDERS
+    ========================================
+    */
+
+    if (
+      path === "/api/admin/orders" &&
+      request.method === "GET"
+    ) {
+
+      try {
+
+        const result =
+          await env.DB.prepare(
+            `
+            SELECT
+              id,
+              customer_name,
+              mobile,
+              address,
+              service,
+              kg,
+              amount,
+              delivery,
+              total,
+              status,
+              created_at
+            FROM orders
+            ORDER BY created_at DESC
+            `
+          )
+          .all();
+
+
+        const orders =
+          (result.results || [])
+          .map(order => ({
+
+            id: order.id,
+
+            customerName:
+              order.customer_name,
+
+            mobile:
+              order.mobile,
+
+            address:
+              order.address,
+
+            service:
+              order.service,
+
+            kg:
+              order.kg,
+
+            amount:
+              order.amount,
+
+            delivery:
+              order.delivery,
+
+            total:
+              order.total,
+
+            status:
+              order.status,
+
+            createdAt:
+              order.created_at
+
+          }));
+
+
+        return json(orders);
+
+
+      } catch (error) {
+
+        return json(
+          {
+            error: error.message
+          },
+          500
+        );
+
+      }
+
+    }
+
+
+    /*
+    ========================================
+    CHANGE ORDER STATUS
+    ========================================
+    */
+
+    if (
+      path.startsWith("/api/admin/orders/") &&
+      request.method === "PATCH"
+    ) {
+
+      try {
+
+        const id =
+          decodeURIComponent(
+            path.replace(
+              "/api/admin/orders/",
+              ""
+            )
+          );
+
+
+        const body =
+          await request.json();
+
+
+        const status =
+          String(
+            body.status || ""
+          ).trim();
+
+
+        const allowedStatuses = [
+
+          "Received",
+
+          "Picked Up",
+
+          "Cleaning",
+
+          "Ready",
+
+          "Delivered",
+
+          "Not Ready"
+
+        ];
+
+
+        if (!allowedStatuses.includes(status)) {
+
+          return json(
+            {
+              error:
+                "Invalid order status."
+            },
+            400
+          );
+
+        }
+
+
+        const result =
+          await env.DB.prepare(
+            `
+            UPDATE orders
+            SET status = ?
+            WHERE id = ?
+            `
+          )
+          .bind(
+            status,
+            id
+          )
+          .run();
+
+
+        if (!result.success) {
+
+          return json(
+            {
+              error:
+                "Unable to update order."
+            },
+            500
+          );
+
+        }
+
+
+        return json({
+
+          success: true,
+
+          id,
+
+          status
+
+        });
+
+
+      } catch (error) {
+
+        return json(
+          {
+            error:
+              error.message ||
+              "Unable to update order."
+          },
+          500
+        );
+
+      }
+
+    }
+
+
+    /*
+    ========================================
+    STATIC WEBSITE
+    ========================================
+    */
+
+    return env.ASSETS.fetch(request);
+
   }
-}
-
-
-function escapeHTML(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
+};
