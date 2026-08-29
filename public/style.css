@@ -1,1 +1,317 @@
 
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f8ff;
+  color: #10233f;
+  max-width: 520px;
+  margin: auto;
+}
+
+.header {
+  background: white;
+  padding: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e5eaf2;
+}
+
+.logo {
+  font-size: 21px;
+  font-weight: 800;
+  color: #1264d8;
+}
+
+.tagline {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: #68768a;
+  margin-top: 3px;
+}
+
+.admin-btn {
+  border: 0;
+  background: #eef5ff;
+  color: #1264d8;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+main {
+  padding-bottom: 30px;
+}
+
+.hero {
+  padding: 32px 20px 24px;
+  background: linear-gradient(145deg, #1264d8, #073b91);
+  color: white;
+  border-radius: 0 0 28px 28px;
+}
+
+.badge {
+  background: rgba(255,255,255,.16);
+  padding: 7px 11px;
+  border-radius: 30px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.hero h1 {
+  font-size: 38px;
+  line-height: 1.08;
+  margin: 20px 0 12px;
+}
+
+.hero h1 span {
+  color: #a9d1ff;
+}
+
+.hero p {
+  color: #d9e9ff;
+  line-height: 1.5;
+}
+
+.delivery-card {
+  margin-top: 25px;
+  padding: 15px;
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 18px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px;
+}
+
+.delivery-card strong {
+  display: block;
+}
+
+.delivery-card small {
+  color: #d9e9ff;
+}
+
+.delivery-card b {
+  font-size: 22px;
+  color: #fff;
+}
+
+.section,
+.order-box,
+.tracking {
+  padding: 24px 18px;
+}
+
+h2 {
+  font-size: 23px;
+  margin-bottom: 15px;
+}
+
+.services {
+  display: grid;
+  gap: 12px;
+}
+
+.service-card {
+  background: white;
+  border: 1px solid #e4ebf5;
+  border-radius: 18px;
+  padding: 17px;
+  cursor: pointer;
+  box-shadow: 0 5px 20px rgba(20,60,110,.05);
+}
+
+.service-card:active {
+  transform: scale(.98);
+}
+
+.icon {
+  font-size: 30px;
+  margin-bottom: 8px;
+}
+
+.service-card h3 {
+  font-size: 17px;
+}
+
+.service-card p {
+  color: #728096;
+  margin: 5px 0;
+  font-size: 13px;
+}
+
+.service-card strong {
+  color: #1264d8;
+  font-size: 21px;
+}
+
+.service-card small {
+  color: #738096;
+  margin-left: 6px;
+}
+
+.order-box,
+.tracking {
+  background: white;
+  margin: 10px 14px;
+  border-radius: 22px;
+  box-shadow: 0 8px 25px rgba(20,60,110,.06);
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 14px 0 7px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #dce4ef;
+  border-radius: 12px;
+  outline: none;
+  font-size: 15px;
+  background: #fbfdff;
+}
+
+textarea {
+  min-height: 85px;
+  resize: vertical;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #1264d8;
+}
+
+.primary-btn,
+.track-row button {
+  width: 100%;
+  border: 0;
+  background: #1264d8;
+  color: white;
+  padding: 14px;
+  border-radius: 13px;
+  margin-top: 18px;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.track-row {
+  display: flex;
+  gap: 8px;
+}
+
+.track-row input {
+  flex: 1;
+}
+
+.track-row button {
+  width: 100px;
+  margin-top: 0;
+}
+
+.result {
+  margin-top: 15px;
+  padding: 15px;
+  border-radius: 13px;
+  background: #eef7ee;
+  color: #17651d;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.admin-panel {
+  background: white;
+  margin: 15px;
+  padding: 18px;
+  border-radius: 22px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.12);
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.admin-header button {
+  border: 0;
+  background: #f1f4f8;
+  width: 35px;
+  height: 35px;
+  border-radius: 10px;
+}
+
+.admin-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.admin-stats div {
+  background: #eef5ff;
+  padding: 15px;
+  border-radius: 15px;
+}
+
+.admin-stats b {
+  display: block;
+  color: #1264d8;
+  font-size: 25px;
+}
+
+.admin-stats span {
+  font-size: 12px;
+  color: #63748a;
+}
+
+.order-admin {
+  border: 1px solid #e2e8f0;
+  border-radius: 15px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+.order-admin h3 {
+  font-size: 16px;
+}
+
+.order-admin p {
+  font-size: 13px;
+  margin: 5px 0;
+  color: #64748b;
+}
+
+.order-admin select {
+  margin-top: 8px;
+}
+
+footer {
+  text-align: center;
+  padding: 30px 15px;
+  color: #6d7d91;
+  font-size: 13px;
+}
+
+footer strong {
+  color: #1264d8;
+  font-size: 17px;
+}
+
+footer p {
+  margin: 5px 0;
+}
