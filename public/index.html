@@ -1,1 +1,161 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laundry Desire Hub – Dry Cleaning</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+<header class="header">
+  <div>
+    <div class="logo">Laundry Desire Hub</div>
+    <div class="tagline">DRY CLEANING</div>
+  </div>
+  <button class="admin-btn" onclick="showAdmin()">Admin</button>
+</header>
+
+<main>
+
+  <section class="hero">
+    <span class="badge">PREMIUM LAUNDRY SERVICE</span>
+    <h1>Fresh Clothes.<br><span>Happy You.</span></h1>
+    <p>Professional washing, ironing & dry cleaning at your doorstep.</p>
+
+    <div class="delivery-card">
+      <div>
+        <strong>🚚 Pickup & Delivery</strong>
+        <small>2–3 days service</small>
+      </div>
+      <b>FREE</b>
+      <small>on orders ₹300+</small>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Our Services</h2>
+
+    <div class="services">
+
+      <div class="service-card" onclick="selectService('Wash & Fold')">
+        <div class="icon">👕</div>
+        <h3>Wash & Fold</h3>
+        <p>Minimum 4 KG</p>
+        <strong>₹269</strong>
+        <small>₹69 / KG</small>
+      </div>
+
+      <div class="service-card" onclick="selectService('Wash & Iron')">
+        <div class="icon">👔</div>
+        <h3>Wash & Iron</h3>
+        <p>Minimum 4 KG</p>
+        <strong>₹369</strong>
+        <small>₹95 / KG</small>
+      </div>
+
+      <div class="service-card" onclick="selectService('Dry Cleaning')">
+        <div class="icon">✨</div>
+        <h3>Dry Cleaning</h3>
+        <p>Premium care</p>
+        <strong>Custom</strong>
+        <small>Ask for price</small>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="order-box">
+    <h2>Place Your Order</h2>
+
+    <form id="orderForm">
+
+      <label>Your Name</label>
+      <input id="name" type="text" placeholder="Enter your name" required>
+
+      <label>Mobile Number</label>
+      <input id="phone" type="tel" placeholder="10 digit mobile number"
+             maxlength="10" required>
+
+      <label>Service</label>
+      <select id="service" required>
+        <option value="">Select service</option>
+        <option>Wash & Fold</option>
+        <option>Wash & Iron</option>
+        <option>Dry Cleaning</option>
+      </select>
+
+      <label>Quantity / Weight</label>
+      <input id="quantity" type="number" min="1" step="0.1"
+             placeholder="Enter KG / pieces" required>
+
+      <label>Pickup Address</label>
+      <textarea id="address" placeholder="Enter pickup address" required></textarea>
+
+      <button class="primary-btn" type="submit">
+        Place Order
+      </button>
+
+    </form>
+
+    <div id="orderResult" class="result hidden"></div>
+  </section>
+
+  <section class="tracking">
+    <h2>Track Your Order</h2>
+
+    <div class="track-row">
+      <input id="trackPhone" type="tel"
+             placeholder="Enter mobile number" maxlength="10">
+      <button onclick="trackOrder()">Track</button>
+    </div>
+
+    <div id="trackingResult"></div>
+  </section>
+
+  <section id="adminPanel" class="admin-panel hidden">
+    <div class="admin-header">
+      <div>
+        <h2>Admin Panel</h2>
+        <p>Laundry Desire Hub</p>
+      </div>
+      <button onclick="hideAdmin()">✕</button>
+    </div>
+
+    <div id="adminLogin">
+      <input id="adminUser" placeholder="Username">
+      <input id="adminPass" type="password" placeholder="Password">
+      <button class="primary-btn" onclick="adminLogin()">Login</button>
+      <p id="loginError"></p>
+    </div>
+
+    <div id="adminContent" class="hidden">
+      <div class="admin-stats">
+        <div>
+          <b id="totalOrders">0</b>
+          <span>Total Orders</span>
+        </div>
+        <div>
+          <b id="readyOrders">0</b>
+          <span>Ready</span>
+        </div>
+      </div>
+
+      <div id="ordersList"></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <strong>Laundry Desire Hub</strong>
+  <p>Professional Laundry & Dry Cleaning</p>
+  <small>Pickup & Delivery • 2–3 Days</small>
+</footer>
+
+<script src="/app.js"></script>
+
+</body>
+</html>
